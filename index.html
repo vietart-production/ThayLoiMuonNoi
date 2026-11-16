@@ -477,21 +477,19 @@
         alpha: Math.random()*0.5 + 0.3
       }));
     }
+    // A field of snow frozen in place looks like a broken page, not like a considered
+    // still image, so reduced motion hides the overlay instead of drawing a static one.
+    if (reduceMotion){ canvas.style.display = 'none'; return; }
+
     size();
-    makeFlakes(reduceMotion ? 40 : 110);
+    makeFlakes(110);
     window.addEventListener('resize', () => {
       size();
-      makeFlakes(reduceMotion ? 40 : 110); // re-seed: old coordinates belong to the old viewport
-      if (reduceMotion) drawStatic();
+      // Only pull flakes that the new viewport left off-screen back into view. Re-seeding
+      // every flake here would make the snow jump on mobile, where scrolling hides the
+      // address bar and fires resize.
+      flakes.forEach(f => { if (f.x > w) f.x = Math.random()*w; if (f.y > h) f.y = Math.random()*h; });
     });
-
-    function drawStatic(){
-      ctx.clearRect(0,0,w,h);
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      flakes.forEach(f => { ctx.globalAlpha = f.alpha; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill(); });
-      ctx.globalAlpha = 1;
-    }
-    if (reduceMotion){ drawStatic(); return; }
 
     function tick(){
       ctx.clearRect(0,0,w,h);

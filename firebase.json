@@ -12,6 +12,18 @@
       ".env.example",
       "DECISIONS.md",
       "CLAUDE.md"
+    ],
+    "headers": [
+      {
+        "comment": "Firebase defaults every file to max-age=3600, so a deploy took up to an hour to reach anyone who had already visited. Pages and code have stable filenames (no content hash), so they must revalidate: no-cache still lets the browser keep the file and ask 'changed?', which the ETag answers with a cheap 304.",
+        "source": "**/*.@(html|css|js)",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "comment": "Images, fonts and audio are replaced rarely and are the heavy files — worth caching for a day.",
+        "source": "**/*.@(png|jpg|jpeg|svg|webp|ico|mp3|woff2)",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
+      }
     ]
   }
 }
