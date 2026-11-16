@@ -1,5 +1,10 @@
 import { getIdToken } from './firebase-client.js';
 
+// Frontend (Firebase Hosting) and backend (Render) are two different origins now —
+// needs the full URL, a relative '/api/...' would resolve against Firebase Hosting
+// itself and 404.
+const API_BASE_URL = 'https://thayloimuonnoi.onrender.com';
+
 async function call(path, { httpMethod = 'GET', body, auth = true } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth) {
@@ -7,7 +12,7 @@ async function call(path, { httpMethod = 'GET', body, auth = true } = {}) {
     if (!token) throw new Error('Chưa đăng nhập.');
     headers.Authorization = `Bearer ${token}`;
   }
-  const res = await fetch('/api' + path, { method: httpMethod, headers, body: body ? JSON.stringify(body) : undefined });
+  const res = await fetch(API_BASE_URL + '/api' + path, { method: httpMethod, headers, body: body ? JSON.stringify(body) : undefined });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Lỗi không rõ.');
   return data;

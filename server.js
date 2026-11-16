@@ -3,16 +3,16 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+// Frontend now lives on Firebase Hosting, a different origin — only it may call this API.
+app.use(cors({ origin: ['https://thayloimuonnoi-8d725.web.app', 'https://thayloimuonnoi-8d725.firebaseapp.com'] }));
 app.use(express.json());
 app.get('/healthz', (req, res) => res.send('ok'));
-app.use(express.static(__dirname)); // serves index.html, dat-don.html, assets/, etc. straight from repo root
 
 try {
   app.use('/api', require('./src/routes'));
 } catch (e) {
   // Missing/invalid env vars (Firebase service account, payOS keys) shouldn't take down the
-  // whole server — the static site and /healthz must keep working while that gets fixed.
+  // whole server — /healthz must keep working while that gets fixed.
   console.error('API not mounted:', e.message);
   app.use('/api', (req, res) => res.status(503).json({ error: 'Backend chưa cấu hình xong (thiếu biến môi trường). Xem logs.' }));
 }
