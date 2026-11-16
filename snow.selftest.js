@@ -85,7 +85,7 @@ console.log(`prefers-reduced-motion ignored: same ${flakeCount} flakes, same ${m
 //    underside IS the bottom of the viewBox. When it was not, the caps sank into the
 //    button by however much empty space the viewBox had below the path.
 const caps = html.match(/<svg[^>]*>[\s\S]*?<\/svg>/g).filter((s) => s.includes('#F3F6FA'));
-assert.equal(caps.length, 3, `expected 3 snow caps, found ${caps.length}`);
+assert.equal(caps.length, 4, `expected 3 snow caps, found ${caps.length}`);
 for (const cap of caps) {
   const label = (cap.match(/viewBox="([^"]+)"/) || [])[1];
   const boxHeight = Number(label.trim().split(/\s+/)[3]);

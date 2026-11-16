@@ -119,18 +119,36 @@
   select:focus,input:focus{border-color:var(--gold);}
   input[type=range]{accent-color:var(--gold);}
   .accent{color:var(--gold-bright);}
-  /* Scoped to #loginDlg: the auth widget is written against assets/app.css, which this
-     page deliberately does not load (it has its own copy of the tokens). Scoping keeps
-     these from reaching the rest of the landing page. */
-  #loginDlg{background:transparent; border:none; padding:0; margin:auto; max-width:92vw;}
-  #loginDlg::backdrop{background:rgba(0,0,0,.7);}
-  #loginDlg .card{background:var(--bg-mid); border-radius:1rem;}
-  #loginDlg label{display:block; color:var(--ink); font-size:.85rem; font-weight:600;}
-  #loginDlg input{width:100%; background:rgba(255,255,255,.04); color:var(--ink); border:1px solid var(--line); border-radius:.6rem; padding:.5rem .7rem; font-size:1rem;}
-  #loginDlg input:focus{outline:none; border-color:var(--gold);}
-  #loginDlg .faint{color:var(--ink-faint);}
+  /* The login dialog, scoped: this page deliberately does not load assets/app.css (it
+     keeps its own copy of the tokens), and the auth widget is written against that file.
+     The dialog itself stays a bare, transparent container so a click landing on it is
+     unambiguously a backdrop click; .login-panel is the visible surface, and it borrows
+     .hero-card's treatment so the modal reads as part of this page rather than a form
+     dropped onto it. */
+  #loginDlg{background:none; border:none; padding:0; margin:auto; max-width:92vw; overflow:visible;}
+  #loginDlg::backdrop{background:rgba(10,6,4,.74);}
+  .login-panel{position:relative; width:min(25rem,92vw); padding:1.75rem; border-radius:1.5rem;
+    background:rgba(26,16,11,.88); border:1px solid rgba(255,255,255,.18);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 30px 70px -20px rgba(0,0,0,.8);}
+  /* The widget carries its own card chrome for the app pages; in here the panel is the
+     card, so flatten it and let one surface hold the form and the dismiss button. */
+  #loginDlg .card{background:none; border:none; box-shadow:none; backdrop-filter:none; padding:0; max-width:none; border-radius:0;}
+  #loginDlg h2{font-size:1.35rem; line-height:1.25; margin-bottom:.4rem;}
+  #loginDlg p{font-size:.8rem; line-height:1.55;}
+  #loginDlg label{display:block; color:var(--ink-dim); font-size:.8rem; font-weight:600;}
+  #loginDlg input{width:100%; background:rgba(255,255,255,.06); color:var(--ink); border:1px solid var(--line);
+    border-radius:.75rem; padding:.7rem .9rem; font-size:1rem;}
+  #loginDlg input::placeholder{color:var(--ink-faint);}
+  #loginDlg input:focus{outline:none; border-color:var(--gold); background:rgba(255,255,255,.1);}
+  #loginDlg .btn-primary{padding:.7rem 1.25rem;}
   #loginDlg button:disabled{opacity:.5; cursor:progress;}
-  .toast{position:fixed; left:50%; bottom:1.25rem; transform:translateX(-50%); z-index:100; max-width:min(92vw,28rem); background:var(--bg-soft); color:var(--ink); border:1px solid rgba(232,180,92,.5); border-radius:.8rem; padding:.7rem 1rem; font-size:.875rem; box-shadow:0 16px 40px -12px rgba(0,0,0,.7);}
+  #loginDlg .faint{color:var(--ink-faint);}
+  .login-dismiss{width:100%; padding:.45rem; font-size:.78rem; color:var(--ink-faint);}
+  .login-dismiss:hover{color:var(--ink);}
+  .toast{position:fixed; left:50%; bottom:1.25rem; transform:translateX(-50%); z-index:100; max-width:min(92vw,28rem);
+    background:var(--bg-soft); color:var(--ink); border:1px solid rgba(232,180,92,.5); border-radius:.8rem;
+    padding:.7rem 1rem; font-size:.875rem; box-shadow:0 16px 40px -12px rgba(0,0,0,.7);}
   .toast.bad{border-color:var(--red-bright); background:#4a1414;}
   html{scroll-behavior:smooth;}
 </style>
@@ -452,10 +470,16 @@
 </div>
 
 <dialog id="loginDlg" aria-label="Đăng nhập">
-  <div id="auth"></div>
-  <form method="dialog" class="text-center mt-3">
-    <button class="faint text-xs" style="text-decoration:underline;">Để sau</button>
-  </form>
+  <div class="login-panel">
+    <!-- Same snow cap the hero card wears, so the modal belongs to this page. -->
+    <svg class="absolute left-5 w-[calc(100%-3.5rem)]" height="14" viewBox="0 0 300 14" preserveAspectRatio="none" fill="#F3F6FA" style="bottom:calc(100% - 1px); filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));">
+      <path d="M0 14 Q 18 1 37 9 T 75 9 T 113 9 T 150 9 T 188 9 T 225 9 T 263 9 T 300 9 L300 14 Z"/>
+    </svg>
+    <div id="auth"></div>
+    <form method="dialog" class="mt-4">
+      <button class="login-dismiss">Để sau</button>
+    </form>
+  </div>
 </dialog>
 
 <script>
@@ -570,7 +594,11 @@
   // flow here. It fills #userBox on its own: phone number + sign out once signed in, and a
   // "Đăng nhập" button before that, because the slot carries data-login="loginDlg".
   import { mountAuthWidget } from './assets/firebase-client.js';
-  mountAuthWidget(document.getElementById('auth'), () => document.getElementById('loginDlg').close());
+  const dlg = document.getElementById('loginDlg');
+  mountAuthWidget(document.getElementById('auth'), () => dlg.close());
+  // A click whose target is the dialog element itself landed on its backdrop — the panel
+  // fills the dialog exactly, so it catches every click meant for the form.
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 </script>
 
 </body>
