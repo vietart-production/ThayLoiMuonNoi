@@ -3,6 +3,11 @@
  * Token values duplicated from index.html's inline <style> on purpose — that landing
  * page works and isn't touched, duplicating ~15 lines of variables here is cheaper
  * than risking a refactor of it.
+ *
+ * The cost of that copy is drift, and it has already bitten once: this file sets
+ * color-scheme:dark and a dialog{} colour, index.html's copy had neither, so the login
+ * dialog there inherited the UA stylesheet's black CanvasText. When you fix something
+ * here that is not specific to the app pages, check index.html's block for the same gap.
  */
 :root{
   --bg-deep:#2A1206; --bg-mid:#3A1A08; --bg-soft:#4A2410;

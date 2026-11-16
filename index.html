@@ -17,6 +17,10 @@
     background-image; everything below returns to the painted night-navy tokens.
   */
   :root{
+    /* Without this the UA stylesheet resolves CanvasText/Canvas to the light-mode
+       pair, and anything that defaults to them — <dialog>, native form controls,
+       scrollbars — comes out black-on-white on this dark page. */
+    color-scheme:dark;
     --bg-deep:#2A1206; --bg-mid:#3A1A08; --bg-soft:#4A2410;
     --gold:#E8B45C; --gold-bright:#F6D59A; --ember:#FF8B5E;
     --red:#C21F2B; --red-bright:#E2473F; --red-dark:#7E141C;
@@ -125,7 +129,7 @@
      unambiguously a backdrop click; .login-panel is the visible surface, and it borrows
      .hero-card's treatment so the modal reads as part of this page rather than a form
      dropped onto it. */
-  #loginDlg{background:none; border:none; padding:0; margin:auto; max-width:92vw; overflow:visible;}
+  #loginDlg{background:none; border:none; color:var(--ink); padding:0; margin:auto; max-width:92vw; overflow:visible;}
   #loginDlg::backdrop{background:rgba(10,6,4,.74);}
   .login-panel{position:relative; width:min(25rem,92vw); padding:1.75rem; border-radius:1.5rem;
     background:rgba(26,16,11,.88); border:1px solid rgba(255,255,255,.18);
