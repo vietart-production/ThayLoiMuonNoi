@@ -38,6 +38,7 @@ export function mountAuthWidget(el, onLogin) {
       showUser(user.phoneNumber);
       onLogin({ phone: user.phoneNumber });
     } else {
+      showSignedOut();
       render('phone');
     }
   });
@@ -49,6 +50,16 @@ export function mountAuthWidget(el, onLogin) {
     box.innerHTML = `<span class="faint">${phone.replace(/^\+84/, '0')}</span>
       <button class="underline hover:text-[var(--gold-bright)]">Đăng xuất</button>`;
     box.querySelector('button').onclick = async () => { await signOut(auth); location.reload(); };
+  }
+
+  // The signed-out half of that slot. Only pages that have somewhere to send the visitor
+  // opt in, by naming a <dialog> in data-login — the app pages leave it off because their
+  // whole body is already the login form.
+  function showSignedOut() {
+    const box = document.getElementById('userBox');
+    if (!box || !box.dataset.login) return;
+    box.innerHTML = '<button class="btn-outline rounded-full px-4 py-1.5 text-sm font-semibold">Đăng nhập</button>';
+    box.querySelector('button').onclick = () => document.getElementById(box.dataset.login).showModal();
   }
 
   async function post(path, body) {
