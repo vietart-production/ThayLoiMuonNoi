@@ -7,10 +7,20 @@ import { guard } from './ui.js';
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-function toE164(localPhone) {
-  // Input is Vietnamese local format (0xxxxxxxxx); the rest of the system (backend,
-  // Firebase user records) expects E.164.
-  return localPhone.replace(/^0/, '+84');
+/*
+ * People write Vietnamese numbers several ways: 0912 345 678, +84912345678,
+ * 84912345678, 00 84..., and sometimes +84 with the trunk 0 still in front. Everything
+ * downstream — the backend, Firebase user records — wants one E.164 string, so settle it
+ * here and return null for anything that is not recognisably a Vietnamese number.
+ *
+ * The optional country-code group backtracks, which is what makes an ambiguous input
+ * like "849123456" resolve the only way that works: as local 0849123456 (084 is a real
+ * mobile prefix) rather than as +84 followed by seven digits.
+ */
+function toE164(input) {
+  const digits = String(input).replace(/[\s.()-]/g, '').replace(/^00/, '+');
+  const m = digits.match(/^(?:\+?84)?0?(\d{9,10})$/);
+  return m ? '+84' + m[1] : null;
 }
 
 /*
@@ -83,7 +93,7 @@ export function mountAuthWidget(el, onLogin) {
           : `Chế độ thử nghiệm: chưa gửi SMS thật, mã của bạn là <strong class="accent">${otpCode}</strong>.`}</p>
         <label for="aw-in">${isPhone ? 'Số điện thoại' : 'Mã OTP'}</label>
         ${isPhone
-          ? '<input id="aw-in" type="tel" inputmode="numeric" autocomplete="tel" placeholder="0901234567" class="w-full mt-1 mb-4">'
+          ? '<input id="aw-in" type="tel" inputmode="numeric" autocomplete="tel" placeholder="0901234567 hoặc +84901234567" class="w-full mt-1 mb-4">'
           : `<input id="aw-in" type="text" inputmode="numeric" autocomplete="one-time-code" value="${otpCode}" class="w-full mt-1 mb-4">`}
         <button class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold w-full">${isPhone ? 'Gửi mã OTP' : 'Xác nhận'}</button>
         ${isPhone ? '' : '<button type="button" id="aw-back" class="faint text-xs mt-3 underline w-full">Đổi số điện thoại</button>'}
@@ -93,9 +103,8 @@ export function mountAuthWidget(el, onLogin) {
     if (!isPhone) el.querySelector('#aw-back').onclick = () => render('phone');
     el.querySelector('form').addEventListener('submit', guard(async () => {
       if (isPhone) {
-        const phone = input.value.replace(/[\s.-]/g, '');
-        if (!/^0\d{9,10}$/.test(phone)) throw new Error('Nhập số điện thoại hợp lệ, ví dụ 0901234567.');
-        phoneE164 = toE164(phone);
+        phoneE164 = toE164(input.value);
+        if (!phoneE164) throw new Error('Số điện thoại chưa đúng. Nhập 0901234567 hoặc +84901234567.');
         const data = await post('/api/auth/request-otp', { phone: phoneE164 });
         render('otp', data.code);
       } else {
