@@ -89,8 +89,7 @@ button:disabled{opacity:.5; cursor:progress;}
 .rate-order:hover .rate-star{color:var(--gold);}
 .rate-order .rate-star:hover ~ .rate-star{color:var(--ink-faint);}
 
-.toast{position:fixed; left:50%; bottom:1.25rem; transform:translateX(-50%); z-index:100; max-width:min(92vw,28rem); background:var(--bg-soft); color:var(--ink); border:1px solid rgba(232,180,92,.5); border-radius:.8rem; padding:.7rem 1rem; font-size:.875rem; box-shadow:0 16px 40px -12px rgba(0,0,0,.7);}
-.toast.bad{border-color:var(--red-bright); background:#4a1414;}
+/* .toast moved to ui.css — index.html needs it too and cannot load this file. */
 
 dialog{background:var(--bg-mid); color:var(--ink); border:1px solid var(--line); border-radius:1rem; margin:auto;}
 dialog::backdrop{background:rgba(0,0,0,.65);}

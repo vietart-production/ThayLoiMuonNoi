@@ -84,8 +84,11 @@ console.log(`prefers-reduced-motion ignored: same ${flakeCount} flakes, same ${m
 //    They are placed with bottom:100%, which only lands correctly if the path's flat
 //    underside IS the bottom of the viewBox. When it was not, the caps sank into the
 //    button by however much empty space the viewBox had below the path.
-const caps = html.match(/<svg[^>]*>[\s\S]*?<\/svg>/g).filter((s) => s.includes('#F3F6FA'));
-assert.equal(caps.length, 4, `expected 3 snow caps, found ${caps.length}`);
+//    Three are written into index.html; the fourth is built in JS by firebase-client.js
+//    for the shared login popup, so both files are scanned.
+const capSources = html + fs.readFileSync('assets/firebase-client.js', 'utf8');
+const caps = capSources.match(/<svg[^>]*>[\s\S]*?<\/svg>/g).filter((s) => s.includes('#F3F6FA'));
+assert.equal(caps.length, 4, `expected 4 snow caps, found ${caps.length}`);
 for (const cap of caps) {
   const label = (cap.match(/viewBox="([^"]+)"/) || [])[1];
   const boxHeight = Number(label.trim().split(/\s+/)[3]);

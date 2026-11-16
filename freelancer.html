@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/ui.css">
 </head>
 <body class="antialiased">
 <div class="content-bg">
@@ -99,11 +100,11 @@
   };
   let user = null;
 
-  mountAuthWidget($('auth'), async (u) => {
+  mountAuthWidget({ gate: $('auth'), onLogin: async (u) => {
     user = u;
     $('app').style.display = 'block';
     try { await loadProfile(); await renderAll(); } catch (e) { toast(e.message, true); }
-  });
+  } });
 
   async function loadProfile() {
     const p = await api.freelancer.me();

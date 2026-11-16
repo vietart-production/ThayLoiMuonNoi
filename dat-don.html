@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/ui.css">
 </head>
 <body class="antialiased">
 <div class="content-bg">
@@ -157,10 +158,10 @@
   let freelancers = [];
   let selectedFreelancerPhone = new URLSearchParams(location.search).get('f') || null;
 
-  mountAuthWidget($('auth'), async () => {
+  mountAuthWidget({ gate: $('auth'), onLogin: async () => {
     $('app').style.display = 'block';
     try { await renderAll(); } catch (e) { toast(e.message, true); }
-  });
+  } });
 
   async function renderAll() {
     await renderWallet();
