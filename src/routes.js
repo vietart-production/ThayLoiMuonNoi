@@ -1,16 +1,47 @@
 const express = require('express');
+const { Timestamp } = require('firebase-admin/firestore');
 const db = require('./db');
 const { requireAuth, requireAdmin } = require('./authMiddleware');
 const { createTopupLink, verifyWebhook } = require('./payos');
 
 const router = express.Router();
 
+// Firestore Timestamp doesn't have a toJSON(), so a bare JSON.stringify turns createdAt/
+// calledAt/closedAt into {_seconds, _nanoseconds} — useless on the frontend. Convert to
+// epoch millis everywhere, once, here, instead of in every route.
+function serialize(value) {
+  if (value instanceof Timestamp) return value.toMillis();
+  if (Array.isArray(value)) return value.map(serialize);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const k in value) out[k] = serialize(value[k]);
+    return out;
+  }
+  return value;
+}
+
 function send(promise, res) {
-  promise.then((data) => res.json(data)).catch((e) => res.status(400).json({ error: e.message }));
+  promise.then((data) => res.json(serialize(data))).catch((e) => res.status(400).json({ error: e.message }));
 }
 
 // ---- Public ----
-router.get('/freelancers', (req, res) => send(db.listFreelancers(), res));
+// Strip fields a stranger shouldn't see (withdrawable balance, raw rating sum) — only
+// /admin/freelancers (admin-only) gets the full document.
+function publicFreelancerView(f) {
+  const rating = f.ratingCount ? Math.round((f.ratingSum / f.ratingCount) * 10) / 10 : null;
+  return {
+    phone: f.phone,
+    name: f.name,
+    voiceNote: f.voiceNote,
+    voiceType: f.voiceType,
+    numberType: f.numberType,
+    carrier: f.carrier,
+    priceMultiplier: f.priceMultiplier,
+    rating,
+    ratingCount: f.ratingCount || 0,
+  };
+}
+router.get('/freelancers', (req, res) => send(db.listFreelancers().then((list) => list.map(publicFreelancerView)), res));
 router.post('/reports', (req, res) => send(db.submitReport(req.body || {}), res));
 
 // payOS calls this directly — no user auth, the signature itself is the auth.

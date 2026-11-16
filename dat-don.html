@@ -36,7 +36,7 @@
       </div>
       <div class="flex items-center gap-2">
         <input id="topupAmount" type="number" placeholder="Số tiền" class="w-32" value="50000">
-        <button id="topupBtn" class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Nạp tiền (mô phỏng payOS)</button>
+        <button id="topupBtn" class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Nạp tiền qua payOS</button>
       </div>
     </section>
 
@@ -97,12 +97,13 @@
   </div>
 </main>
 
-<footer class="text-center faint text-xs py-8">Demo backend giả — dữ liệu lưu trong localStorage trình duyệt, chưa kết nối hệ thống thật.</footer>
+<footer class="text-center faint text-xs py-8">Thay Lời Muốn Nói — backend thật (Firebase Auth + Firestore + payOS).</footer>
 </div>
 
-<script src="assets/mock-backend.js"></script>
-<script src="assets/auth-widget.js"></script>
-<script>
+<script type="module">
+  import { mountAuthWidget } from './assets/firebase-client.js';
+  import { api } from './assets/api-client.js';
+
   const $ = (id) => document.getElementById(id);
   const STATUS_LABEL = {
     cho_duyet_kich_ban: 'Đang chờ duyệt kịch bản',
@@ -113,33 +114,42 @@
     tranh_chap: 'Đang tranh chấp — chờ CSKH xử lý',
     da_hoan_tien: 'Đã hoàn tiền',
   };
+  // Local mirror of the server's pricing formula (src/db.js calcPrice) — for live preview
+  // only. The server recomputes the real price itself from the raw inputs; it never
+  // trusts a price the client sends.
+  function previewPrice({ chars, duration, speed, emotion, timing }, multiplier = 1) {
+    const base = Math.ceil(chars / 20) * 1000;
+    return Math.round((base * duration * speed * (1 + emotion + timing) * multiplier) / 500) * 500;
+  }
+
   let user = null;
+  let freelancers = [];
   let selectedFreelancerPhone = new URLSearchParams(location.search).get('f') || null;
 
-  mountAuthWidget($('auth'), 'buyer', (u) => {
+  mountAuthWidget($('auth'), async (u) => {
     user = u;
     $('auth').style.display = 'none';
     $('app').style.display = 'block';
-    renderAll();
+    await renderAll();
   });
 
-  function renderAll() {
-    renderWallet();
-    renderFreelancers();
-    renderOrders();
+  async function renderAll() {
+    await renderWallet();
+    await renderFreelancers();
+    await renderOrders();
   }
 
-  function renderWallet() {
-    const bal = TLMN.Wallet.balance(user.phone);
-    $('balanceOut').textContent = bal.toLocaleString('vi-VN') + 'đ';
+  async function renderWallet() {
+    const { balance } = await api.wallet.get();
+    $('balanceOut').textContent = balance.toLocaleString('vi-VN') + 'đ';
     $('walletBadge').style.display = 'inline-flex';
-    $('walletBadge').textContent = bal.toLocaleString('vi-VN') + 'đ';
+    $('walletBadge').textContent = balance.toLocaleString('vi-VN') + 'đ';
   }
 
-  function renderFreelancers() {
-    const list = TLMN.Freelancer.list();
-    $('freelancerList').innerHTML = list.map((f) => {
-      const rating = TLMN.Freelancer.rating(f.phone);
+  async function renderFreelancers() {
+    freelancers = await api.freelancers.list();
+    $('freelancerList').innerHTML = freelancers.map((f) => {
+      const rating = f.rating;
       const selected = f.phone === selectedFreelancerPhone;
       return `
       <div class="card p-4 ${selected ? '' : ''}" style="${selected ? 'border-color:rgba(232,180,92,.6);' : ''}">
@@ -166,16 +176,20 @@
     updateNote();
   }
 
+  function getSelectedFreelancer() {
+    return selectedFreelancerPhone ? freelancers.find((f) => f.phone === selectedFreelancerPhone) : null;
+  }
+
   function updateNote() {
-    const f = selectedFreelancerPhone ? TLMN.Freelancer.get(selectedFreelancerPhone) : null;
+    const f = getSelectedFreelancer();
     $('selectedFreelancerNote').textContent = f ? `Đang đặt cho: ${f.name} (hệ số giá x${f.priceMultiplier})` : 'Chưa chọn người nói hộ ở trên.';
   }
 
   function recalc() {
     const chars = $('script').value.trim().length;
     $('charsOut').textContent = chars;
-    const f = selectedFreelancerPhone ? TLMN.Freelancer.get(selectedFreelancerPhone) : null;
-    const price = TLMN.Pricing.calc({
+    const f = getSelectedFreelancer();
+    const price = previewPrice({
       chars: Math.max(chars, 1),
       duration: Number($('duration').value),
       speed: Number($('speed').value),
@@ -187,15 +201,22 @@
   }
   ['script', 'duration', 'speed', 'emotion', 'timing'].forEach((id) => $(id).addEventListener('input', recalc));
 
-  $('topupBtn').onclick = () => {
+  $('topupBtn').onclick = async () => {
     const amount = Number($('topupAmount').value) || 0;
-    if (amount > 0) {
-      TLMN.Wallet.topup(user.phone, amount);
-      renderWallet();
+    if (amount <= 0) return;
+    try {
+      const { checkoutUrl } = await api.wallet.topupLink(amount);
+      location.href = checkoutUrl; // payOS hosted checkout; returns to ?topup=done on this page
+    } catch (e) {
+      alert(e.message);
     }
   };
+  if (new URLSearchParams(location.search).get('topup')) {
+    // Webhook may take a few seconds to land — the user is back on the page before it does.
+    setTimeout(renderWallet, 3000);
+  }
 
-  $('submitOrder').onclick = () => {
+  $('submitOrder').onclick = async () => {
     const err = $('orderErr');
     err.style.display = 'none';
     if (!selectedFreelancerPhone) {
@@ -210,8 +231,7 @@
       return;
     }
     try {
-      TLMN.Order.create({
-        buyerPhone: user.phone,
+      await api.orders.create({
         freelancerPhone: selectedFreelancerPhone,
         script: $('script').value.trim(),
         chars,
@@ -222,22 +242,22 @@
       });
       $('script').value = '';
       recalc();
-      renderWallet();
-      renderOrders();
+      await renderWallet();
+      await renderOrders();
     } catch (e) {
       err.textContent = e.message;
       err.style.display = 'block';
     }
   };
 
-  function renderOrders() {
-    const orders = TLMN.Order.listByBuyer(user.phone);
+  async function renderOrders() {
+    const orders = await api.orders.mine();
     if (!orders.length) {
       $('myOrders').innerHTML = '<p class="faint text-sm">Chưa có đơn nào.</p>';
       return;
     }
     $('myOrders').innerHTML = orders.map((o) => {
-      const f = TLMN.Freelancer.get(o.freelancerPhone);
+      const f = freelancers.find((x) => x.phone === o.freelancerPhone);
       let actions = '';
       if (o.status === 'cho_xac_nhan') {
         actions = `
@@ -273,23 +293,20 @@
     }).join('');
 
     document.querySelectorAll('.confirm-order').forEach((btn) => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const method = document.querySelector(`.confirm-method[data-id="${btn.dataset.id}"]`).value;
-        TLMN.Order.buyerConfirm(btn.dataset.id, { method });
-        renderOrders();
+        try { await api.orders.confirm(btn.dataset.id, method); await renderOrders(); } catch (e) { alert(e.message); }
       };
     });
     document.querySelectorAll('.dispute-order').forEach((btn) => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const reason = prompt('Mô tả ngắn lý do tranh chấp:') || 'Không rõ lý do';
-        TLMN.Order.buyerDispute(btn.dataset.id, { reason });
-        renderOrders();
+        try { await api.orders.dispute(btn.dataset.id, reason); await renderOrders(); } catch (e) { alert(e.message); }
       };
     });
     document.querySelectorAll('.rate-star').forEach((btn) => {
-      btn.onclick = () => {
-        TLMN.Order.rate(btn.dataset.id, Number(btn.dataset.stars));
-        renderOrders();
+      btn.onclick = async () => {
+        try { await api.orders.rate(btn.dataset.id, Number(btn.dataset.stars)); await renderOrders(); } catch (e) { alert(e.message); }
       };
     });
   }

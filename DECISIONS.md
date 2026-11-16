@@ -99,8 +99,15 @@ File mới (ở cùng cấp với `index.html`, không có thư mục `server/` 
 
 Đã deploy lên Render: https://thayloimuonnoi.onrender.com — tự kiểm tra `GET /healthz` và `GET /` trả 200, `GET /api/*` trả 503 với thông báo rõ ràng (đúng ý đồ, vì chưa có env var Firebase/payOS).
 
-Chưa làm (còn lại để hoàn thành):
-- [ ] Frontend (`dat-don.html`, `freelancer.html`, `admin.html`, `assets/auth-widget.js`) **vẫn đang gọi `assets/mock-backend.js` (fake, localStorage)**, chưa đổi sang gọi `/api/*` thật và chưa dùng Firebase Client SDK (phone sign-in + `RecaptchaVerifier`) để đăng nhập thật. Đây là phần còn lại lớn nhất.
-- [ ] Chưa deploy lên Render — cần tài khoản Render connect vào repo GitHub, set các env var trong `.env.example`.
-- [ ] Chưa có Firebase project thật (Phone Auth, service account key) và payOS key thật để test end-to-end.
-- [ ] `ADMIN_PHONE_NUMBERS` thay cho passcode `admin123` cũ — nhưng trang `admin.html` hiện tại chưa gọi API thật nên vẫn đang dùng passcode cũ cho tới khi rewiring xong.
+Đã xong (2026-11): frontend rewiring hoàn tất. `dat-don.html`/`freelancer.html`/`admin.html`/`report.html` gọi thẳng `/api/*` qua `assets/api-client.js`, đăng nhập bằng Firebase Phone Auth thật qua `assets/firebase-client.js` (bỏ hẳn `assets/auth-widget.js` và passcode `admin123` — admin giờ gác bằng `ADMIN_PHONE_NUMBERS` trên server). `assets/mock-backend.js` không còn trang nào gọi tới, giữ lại chỉ để tham khảo.
+
+Hai lỗi thật tìm ra khi rewiring, đã sửa:
+- `GET /api/freelancers` (public) từng trả nguyên document Firestore, lộ `withdrawable` (số dư) của freelancer cho bất kỳ ai — đã thêm `publicFreelancerView()` lọc field trong `src/routes.js`.
+- Firestore `Timestamp` không serialize được qua `JSON.stringify` (ra `{_seconds, _nanoseconds}` thay vì millis) — đã thêm bước `serialize()` chung trong `send()` ở `src/routes.js`, áp dụng cho mọi response.
+
+Việc còn mở để chạy được end-to-end thật:
+- [ ] Điền giá trị thật vào `assets/firebase-config.js` (apiKey, appId...) — lấy ở Firebase Console → Project settings → Your apps → Web app.
+- [ ] Bật **Phone** ở Firebase Console → Authentication → Sign-in method (nếu chưa bật).
+- [ ] Thêm domain `thayloimuonnoi.onrender.com` vào Firebase Console → Authentication → Settings → Authorized domains (reCAPTCHA sẽ chặn nếu thiếu).
+- [ ] Set `ADMIN_PHONE_NUMBERS` trên Render (số điện thoại dạng `+84...`, có thể nhiều số cách nhau bằng dấu phẩy) để vào được `admin.html`.
+- [ ] Test luồng payOS thật từ trình duyệt (tạo link nạp tiền → thanh toán thử → webhook cộng tiền).

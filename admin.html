@@ -20,13 +20,8 @@
 </header>
 
 <main class="max-w-5xl mx-auto px-5 py-10">
-  <div id="gate" class="card p-5 max-w-sm">
-    <h1 class="font-bold mb-3">Đăng nhập nội bộ</h1>
-    <p class="faint text-xs mb-3">Demo: chốt tay bằng passcode cố định trong code, chưa có hệ thống tài khoản admin thật.</p>
-    <input id="passcode" type="text" placeholder="Passcode" class="w-full mb-3">
-    <button id="gateBtn" class="btn-primary rounded-full px-5 py-2 text-sm font-semibold w-full">Vào</button>
-    <p id="gateErr" class="pill-red mt-3 text-xs" style="display:none;">Sai passcode.</p>
-  </div>
+  <div id="auth"></div>
+  <p id="gateErr" class="pill-red mt-3 text-xs" style="display:none;">Số điện thoại này không có quyền CSKH (không có trong ADMIN_PHONE_NUMBERS trên server).</p>
 
   <div id="app" style="display:none;">
     <div class="flex justify-end mb-4">
@@ -56,48 +51,62 @@
   </div>
 </main>
 
-<footer class="text-center faint text-xs py-8">Demo backend giả — dữ liệu lưu trong localStorage trình duyệt, chưa kết nối hệ thống thật.</footer>
+<footer class="text-center faint text-xs py-8">Thay Lời Muốn Nói — backend thật (Firebase Auth + Firestore + payOS).</footer>
 </div>
 
-<script src="assets/mock-backend.js"></script>
-<script>
+<script type="module">
+  import { mountAuthWidget } from './assets/firebase-client.js';
+  import { api } from './assets/api-client.js';
+
+  // Static copy of src/db.js's BANNED_CONTENT_CHECKLIST — 7 fixed strings, not worth a
+  // round-trip to fetch. Keep these two lists in sync by hand if the server list changes.
+  const BANNED_CONTENT_CHECKLIST = [
+    'Đe dọa, hăm dọa người nghe',
+    'Đòi nợ / thu hồi công nợ trá hình',
+    'Mạo danh cơ quan nhà nước, công an, ngân hàng',
+    'Nội dung khiêu dâm, quấy rối tình dục',
+    'Liên quan tới người dưới 18 tuổi không phù hợp',
+    'Lừa đảo tài chính, yêu cầu chuyển tiền',
+    'Nội dung chính trị nhạy cảm',
+  ];
+
   const $ = (id) => document.getElementById(id);
 
-  $('gateBtn').onclick = () => {
-    if (TLMN.Admin.checkPasscode($('passcode').value)) {
-      $('gate').style.display = 'none';
+  mountAuthWidget($('auth'), async () => {
+    try {
+      await renderAll(); // first admin call also doubles as the permission check
+      $('auth').style.display = 'none';
       $('app').style.display = 'block';
-      renderAll();
-    } else {
+    } catch (e) {
       $('gateErr').style.display = 'block';
     }
-  };
+  });
 
-  function renderAll() {
-    renderReviewQueue();
-    renderDisputeQueue();
-    renderWithdrawQueue();
-    renderReportQueue();
+  async function renderAll() {
+    await renderReviewQueue();
+    await renderDisputeQueue();
+    await renderWithdrawQueue();
+    await renderReportQueue();
   }
 
-  $('timeoutSweep').onclick = () => {
-    const n = TLMN.Order.checkTimeouts();
-    $('sweepResult').textContent = `Đã tự xác nhận ${n} đơn quá 48h không phản hồi.`;
-    renderAll();
+  $('timeoutSweep').onclick = async () => {
+    const { count } = await api.admin.runTimeouts();
+    $('sweepResult').textContent = `Đã tự xác nhận ${count} đơn quá 48h không phản hồi.`;
+    await renderAll();
   };
 
-  function renderReviewQueue() {
-    const list = TLMN.Order.listPendingReview();
+  async function renderReviewQueue() {
+    const list = await api.admin.pendingReview();
+    const freelancers = await api.admin.allFreelancers();
     $('reviewQueue').innerHTML = list.length
       ? list.map((o) => {
-          const f = TLMN.Freelancer.get(o.freelancerPhone);
-          const checklistId = 'cl_' + o.id;
+          const f = freelancers.find((x) => x.phone === o.freelancerPhone);
           return `
           <div class="card p-4">
             <p class="font-semibold text-sm">Đơn ${o.id.slice(-6)} · ${f ? f.name : o.freelancerPhone} · ${o.price.toLocaleString('vi-VN')}đ</p>
             <p class="mt-2 text-sm" style="white-space:pre-wrap;">"${o.script}"</p>
-            <div id="${checklistId}" class="mt-3 grid sm:grid-cols-2 gap-1 text-xs faint">
-              ${TLMN.BANNED_CONTENT_CHECKLIST.map((c, i) => `
+            <div class="mt-3 grid sm:grid-cols-2 gap-1 text-xs faint">
+              ${BANNED_CONTENT_CHECKLIST.map((c) => `
                 <label class="flex items-center gap-1.5"><input type="checkbox" class="flag-check" data-order="${o.id}" value="${c}"> ${c}</label>
               `).join('')}
             </div>
@@ -110,27 +119,27 @@
       : '<p class="faint text-sm">Không có đơn nào đang chờ.</p>';
 
     document.querySelectorAll('.approve-script').forEach((btn) => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const flags = Array.from(document.querySelectorAll(`.flag-check[data-order="${btn.dataset.id}"]:checked`)).map((c) => c.value);
         if (flags.length) {
           alert('Có nội dung bị đánh dấu, không thể duyệt. Hãy từ chối đơn này.');
           return;
         }
-        TLMN.Order.adminReviewScript(btn.dataset.id, { approve: true, bannedFlags: [] });
-        renderReviewQueue();
+        await api.admin.reviewScript(btn.dataset.id, true, []);
+        await renderReviewQueue();
       };
     });
     document.querySelectorAll('.reject-script').forEach((btn) => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const flags = Array.from(document.querySelectorAll(`.flag-check[data-order="${btn.dataset.id}"]:checked`)).map((c) => c.value);
-        TLMN.Order.adminReviewScript(btn.dataset.id, { approve: false, bannedFlags: flags });
-        renderReviewQueue();
+        await api.admin.reviewScript(btn.dataset.id, false, flags);
+        await renderReviewQueue();
       };
     });
   }
 
-  function renderDisputeQueue() {
-    const list = TLMN.Order.listDisputed();
+  async function renderDisputeQueue() {
+    const list = await api.admin.disputed();
     $('disputeQueue').innerHTML = list.length
       ? list.map((o) => `
         <div class="card p-4">
@@ -145,15 +154,15 @@
       : '<p class="faint text-sm">Không có tranh chấp nào.</p>';
 
     document.querySelectorAll('.resolve-dispute').forEach((btn) => {
-      btn.onclick = () => {
-        TLMN.Order.adminResolveDispute(btn.dataset.id, { decision: btn.dataset.decision });
-        renderDisputeQueue();
+      btn.onclick = async () => {
+        await api.admin.resolveDispute(btn.dataset.id, btn.dataset.decision);
+        await renderDisputeQueue();
       };
     });
   }
 
-  function renderWithdrawQueue() {
-    const list = TLMN.Withdrawal.listPending();
+  async function renderWithdrawQueue() {
+    const list = await api.admin.pendingWithdrawals();
     $('withdrawQueue').innerHTML = list.length
       ? list.map((w) => `
         <div class="card p-4 flex justify-between items-center flex-wrap gap-2">
@@ -165,12 +174,13 @@
         </div>`).join('')
       : '<p class="faint text-sm">Không có lệnh rút nào.</p>';
 
-    document.querySelectorAll('.wd-approve').forEach((btn) => { btn.onclick = () => { TLMN.Withdrawal.adminApprove(btn.dataset.id); renderWithdrawQueue(); }; });
-    document.querySelectorAll('.wd-reject').forEach((btn) => { btn.onclick = () => { TLMN.Withdrawal.adminReject(btn.dataset.id); renderWithdrawQueue(); }; });
+    document.querySelectorAll('.wd-approve').forEach((btn) => { btn.onclick = async () => { await api.admin.approveWithdrawal(btn.dataset.id); await renderWithdrawQueue(); }; });
+    document.querySelectorAll('.wd-reject').forEach((btn) => { btn.onclick = async () => { await api.admin.rejectWithdrawal(btn.dataset.id); await renderWithdrawQueue(); }; });
   }
 
-  function renderReportQueue() {
-    const list = TLMN.Report.listPending();
+  async function renderReportQueue() {
+    const list = await api.admin.pendingReports();
+    const freelancers = await api.admin.allFreelancers();
     $('reportQueue').innerHTML = list.length
       ? list.map((r) => `
         <div class="card p-4">
@@ -179,7 +189,7 @@
           <div class="mt-3 flex gap-2 flex-wrap items-center">
             <select class="report-freelancer text-xs" data-id="${r.id}">
               <option value="">— chọn người nói hộ để khóa (nếu xác định được) —</option>
-              ${TLMN.Freelancer.listAll().map((f) => `<option value="${f.phone}">${f.name} (${f.phone})</option>`).join('')}
+              ${freelancers.map((f) => `<option value="${f.phone}">${f.name} (${f.phone})</option>`).join('')}
             </select>
             <button class="report-block btn-outline rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${r.id}">Khóa tài khoản đó</button>
             <button class="report-dismiss btn-dark rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${r.id}">Bỏ qua</button>
@@ -187,13 +197,13 @@
         </div>`).join('')
       : '<p class="faint text-sm">Không có báo cáo nào.</p>';
 
-    document.querySelectorAll('.report-dismiss').forEach((btn) => { btn.onclick = () => { TLMN.Report.adminDismiss(btn.dataset.id); renderReportQueue(); }; });
+    document.querySelectorAll('.report-dismiss').forEach((btn) => { btn.onclick = async () => { await api.admin.dismissReport(btn.dataset.id); await renderReportQueue(); }; });
     document.querySelectorAll('.report-block').forEach((btn) => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const phone = document.querySelector(`.report-freelancer[data-id="${btn.dataset.id}"]`).value;
         if (!phone) { alert('Chọn người nói hộ cần khóa trước.'); return; }
-        TLMN.Report.adminBlockFreelancer(btn.dataset.id, phone);
-        renderReportQueue();
+        await api.admin.blockFreelancer(btn.dataset.id, phone);
+        await renderReportQueue();
       };
     });
   }

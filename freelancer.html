@@ -71,12 +71,13 @@
   </div>
 </main>
 
-<footer class="text-center faint text-xs py-8">Demo backend giả — dữ liệu lưu trong localStorage trình duyệt, chưa kết nối hệ thống thật.</footer>
+<footer class="text-center faint text-xs py-8">Thay Lời Muốn Nói — backend thật (Firebase Auth + Firestore + payOS).</footer>
 </div>
 
-<script src="assets/mock-backend.js"></script>
-<script src="assets/auth-widget.js"></script>
-<script>
+<script type="module">
+  import { mountAuthWidget } from './assets/firebase-client.js';
+  import { api } from './assets/api-client.js';
+
   const $ = (id) => document.getElementById(id);
   const STATUS_LABEL = {
     cho_duyet_kich_ban: 'Đang chờ platform duyệt kịch bản',
@@ -89,16 +90,16 @@
   };
   let user = null;
 
-  mountAuthWidget($('auth'), 'freelancer', (u) => {
+  mountAuthWidget($('auth'), async (u) => {
     user = u;
     $('auth').style.display = 'none';
     $('app').style.display = 'block';
-    loadProfile();
-    renderAll();
+    await loadProfile();
+    await renderAll();
   });
 
-  function loadProfile() {
-    const p = TLMN.Freelancer.get(user.phone);
+  async function loadProfile() {
+    const p = await api.freelancer.me();
     if (p) {
       $('pName').value = p.name || '';
       $('pCarrier').value = p.carrier || 'Viettel';
@@ -109,8 +110,8 @@
     }
   }
 
-  $('saveProfile').onclick = () => {
-    TLMN.Freelancer.upsertProfile(user.phone, {
+  $('saveProfile').onclick = async () => {
+    await api.freelancer.saveProfile({
       name: $('pName').value.trim() || user.phone,
       carrier: $('pCarrier').value,
       voiceNote: $('pVoiceNote').value.trim(),
@@ -119,30 +120,30 @@
       priceMultiplier: Number($('pMultiplier').value) || 1,
     });
     $('profileSaved').style.display = 'block';
-    renderAll();
+    await renderAll();
   };
 
-  function renderAll() {
-    renderWallet();
-    renderWithdrawHistory();
-    renderOrders();
+  async function renderAll() {
+    await renderWallet();
+    await renderWithdrawHistory();
+    await renderOrders();
   }
 
-  function renderWallet() {
-    const f = TLMN.Freelancer.get(user.phone);
+  async function renderWallet() {
+    const f = await api.freelancer.me();
     $('withdrawableOut').textContent = (f ? f.withdrawable : 0).toLocaleString('vi-VN') + 'đ';
   }
 
-  $('wdBtn').onclick = () => {
+  $('wdBtn').onclick = async () => {
     const err = $('wdErr');
     err.style.display = 'none';
     try {
-      TLMN.Withdrawal.request(user.phone, Number($('wdAmount').value) || 0, $('wdBankNumber').value.trim(), $('wdBankHolder').value.trim());
+      await api.withdrawals.request(Number($('wdAmount').value) || 0, $('wdBankNumber').value.trim(), $('wdBankHolder').value.trim());
       $('wdAmount').value = '';
       $('wdBankNumber').value = '';
       $('wdBankHolder').value = '';
-      renderWallet();
-      renderWithdrawHistory();
+      await renderWallet();
+      await renderWithdrawHistory();
     } catch (e) {
       err.textContent = e.message;
       err.style.display = 'block';
@@ -150,8 +151,8 @@
   };
 
   const WD_LABEL = { cho_duyet: 'Chờ admin duyệt', da_chuyen: 'Đã chuyển khoản', tu_choi: 'Bị từ chối' };
-  function renderWithdrawHistory() {
-    const list = TLMN.Withdrawal.listByFreelancer(user.phone);
+  async function renderWithdrawHistory() {
+    const list = await api.withdrawals.mine();
     $('wdHistory').innerHTML = list.length
       ? list.map((w) => `
         <div class="card p-3 flex justify-between items-center text-sm">
@@ -161,8 +162,8 @@
       : '<p class="faint text-sm">Chưa có lệnh rút nào.</p>';
   }
 
-  function renderOrders() {
-    const orders = TLMN.Order.listByFreelancer(user.phone);
+  async function renderOrders() {
+    const orders = await api.orders.assigned();
     if (!orders.length) {
       $('myOrders').innerHTML = '<p class="faint text-sm">Chưa có đơn nào.</p>';
       return;
@@ -190,9 +191,8 @@
     }).join('');
 
     document.querySelectorAll('.mark-called').forEach((btn) => {
-      btn.onclick = () => {
-        TLMN.Order.freelancerMarkCalled(btn.dataset.id, { hasRecording: btn.dataset.rec === '1' });
-        renderOrders();
+      btn.onclick = async () => {
+        try { await api.orders.markCalled(btn.dataset.id, btn.dataset.rec === '1'); await renderOrders(); } catch (e) { alert(e.message); }
       };
     });
   }

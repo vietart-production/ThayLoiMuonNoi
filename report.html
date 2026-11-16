@@ -37,14 +37,14 @@
   <p id="reportDone" class="status-pill mt-4" style="display:none;">Đã gửi. Cảm ơn bạn, bộ phận CSKH sẽ xem xét.</p>
 </main>
 
-<footer class="text-center faint text-xs py-8">Demo backend giả — dữ liệu lưu trong localStorage trình duyệt, chưa kết nối hệ thống thật.</footer>
+<footer class="text-center faint text-xs py-8">Thay Lời Muốn Nói — backend thật (Firebase Auth + Firestore + payOS).</footer>
 </div>
 
-<script src="assets/mock-backend.js"></script>
-<script>
-  document.getElementById('reportForm').addEventListener('submit', (e) => {
+<script type="module">
+  import { api } from './assets/api-client.js';
+  document.getElementById('reportForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    TLMN.Report.submit({
+    await api.reports.submit({
       callerHint: document.getElementById('callerHint').value.trim(),
       description: document.getElementById('description').value.trim(),
     });
