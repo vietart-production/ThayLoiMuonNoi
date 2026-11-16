@@ -80,4 +80,23 @@ const mean = (xs) => xs.reduce((x, y) => x + y, 0) / xs.length;
 assert.ok(Math.abs(mean(bMoved) - mean(moved)) < 5, 'reduced motion must fall at the same speed');
 console.log(`prefers-reduced-motion ignored: same ${flakeCount} flakes, same ${mean(bMoved).toFixed(0)} px/s average`);
 
+// 4. The decorative snow caps sitting on buttons and cards.
+//    They are placed with bottom:100%, which only lands correctly if the path's flat
+//    underside IS the bottom of the viewBox. When it was not, the caps sank into the
+//    button by however much empty space the viewBox had below the path.
+const caps = html.match(/<svg[^>]*>[\s\S]*?<\/svg>/g).filter((s) => s.includes('#F3F6FA'));
+assert.equal(caps.length, 3, `expected 3 snow caps, found ${caps.length}`);
+for (const cap of caps) {
+  const label = (cap.match(/viewBox="([^"]+)"/) || [])[1];
+  const boxHeight = Number(label.trim().split(/\s+/)[3]);
+  const d = cap.match(/ d="([^"]+)"/)[1];
+  // Every coordinate in these paths is an x,y pair (M/L/Q/T only — no H/V), so the odd
+  // indices are the y values, and a Bézier never passes below its control points.
+  const nums = d.match(/-?\d*\.?\d+/g).map(Number);
+  const lowest = Math.max(...nums.filter((_, i) => i % 2 === 1));
+  assert.equal(lowest, boxHeight, `snow cap viewBox="${label}" has its path bottom at y=${lowest}, leaving ${boxHeight - lowest}px of dead space that drops it into whatever it sits on`);
+  assert.ok(/bottom:\s*calc\(100% - 1px\)/.test(cap), `snow cap viewBox="${label}" must sit on its parent's edge via bottom:100%, not a hand-tuned negative top`);
+}
+console.log(`${caps.length} snow caps: path bottom == viewBox bottom, all placed with bottom:100%`);
+
 console.log('\nALL SNOW CHECKS PASSED');

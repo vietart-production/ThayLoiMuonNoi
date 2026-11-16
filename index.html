@@ -176,7 +176,11 @@
       </p>
       <div class="mt-7 flex flex-wrap gap-3">
         <a href="dat-don.html" class="btn-primary relative font-semibold px-6 py-3 rounded-full inline-flex items-center gap-2">
-          <svg width="40" height="18" viewBox="0 0 40 18" style="position:absolute; top:-8px; left:10px;">
+          <!-- Snow cap. The path's flat underside is the last line of the viewBox (y=16 of 16),
+               so bottom:100% stands it exactly on the button's top edge whatever the button's
+               height; the 1px pull-down just hides the seam. Don't reintroduce a negative top:
+               that has to be re-guessed every time the art or the padding changes. -->
+          <svg width="40" height="16" viewBox="0 0 40 16" style="position:absolute; bottom:calc(100% - 1px); left:10px;">
             <path d="M0 16 Q4 3 11 9 Q15 0 21 8 Q26 1 32 9 Q36 12 38 16 Z" fill="#F3F6FA" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));"/>
           </svg>
           <svg width="18" height="24" viewBox="0 0 18 24" style="position:absolute; top:-15px; left:2px;">
@@ -188,7 +192,7 @@
           Đặt một cuộc gọi
         </a>
         <a href="freelancer.html" class="btn-dark relative font-semibold px-6 py-3 rounded-full inline-flex items-center gap-2">
-          <svg width="36" height="16" viewBox="0 0 36 16" style="position:absolute; top:-7px; left:12px;">
+          <svg width="36" height="14" viewBox="0 0 36 14" style="position:absolute; bottom:calc(100% - 1px); left:12px;">
             <path d="M0 14 Q4 2 10 8 Q14 0 20 7 Q25 1 30 9 Q33 11 34 14 Z" fill="#F3F6FA" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,.2));"/>
           </svg>
           <span style="font-size:16px;">❄️</span>
@@ -203,7 +207,7 @@
     </div>
     <div class="relative">
       <div class="hero-card relative rounded-3xl p-6 max-w-sm mx-auto">
-        <svg class="absolute -top-1.5 left-4 w-[calc(100%-3.5rem)]" height="14" viewBox="0 0 300 14" preserveAspectRatio="none" fill="#F3F6FA" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,.2));">
+        <svg class="absolute left-4 w-[calc(100%-3.5rem)]" height="14" viewBox="0 0 300 14" preserveAspectRatio="none" fill="#F3F6FA" style="bottom:calc(100% - 1px); filter:drop-shadow(0 1px 1px rgba(0,0,0,.2));">
           <path d="M0 14 Q 18 1 37 9 T 75 9 T 113 9 T 150 9 T 188 9 T 225 9 T 263 9 T 300 9 L300 14 Z"/>
         </svg>
         <svg class="absolute -top-3 -right-3" width="46" height="42" viewBox="0 0 46 42" fill="none">
