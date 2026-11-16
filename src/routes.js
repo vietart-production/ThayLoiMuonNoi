@@ -44,6 +44,17 @@ function publicFreelancerView(f) {
 router.get('/freelancers', (req, res) => send(db.listFreelancers().then((list) => list.map(publicFreelancerView)), res));
 router.post('/reports', (req, res) => send(db.submitReport(req.body || {}), res));
 
+// TEMPORARY simulated OTP (see src/db.js) — hands the code back instead of texting it.
+// No real identity check happens here; remove once real Phone Auth (or a real SMS
+// provider) is wired up.
+router.post('/auth/request-otp', (req, res) => {
+  const phone = req.body.phone;
+  send(db.requestSimulatedOtp(phone).then((code) => ({ phone, code })), res);
+});
+router.post('/auth/verify-otp', (req, res) => {
+  send(db.verifySimulatedOtp(req.body.phone, req.body.code).then((customToken) => ({ customToken })), res);
+});
+
 // payOS calls this directly — no user auth, the signature itself is the auth.
 router.post('/payos/webhook', async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-const { db, FieldValue } = require('./firebaseAdmin');
+const { db, FieldValue, auth } = require('./firebaseAdmin');
 
 /*
  * Real Firestore port of assets/mock-backend.js's state machine. Same statuses, same
@@ -38,6 +38,37 @@ function roundTo500(n) {
 function calcPrice({ chars, duration, speed, emotion, timing }, multiplier = 1) {
   const base = Math.ceil(chars / 20) * 1000;
   return roundTo500(base * duration * speed * (1 + emotion + timing) * multiplier);
+}
+
+// ---- Simulated OTP (TEMPORARY — see DECISIONS.md §12) ----
+// Real Firebase Phone Auth needs the Blaze plan to send SMS at all; until that's
+// decided, this hands the OTP straight back to whoever asks instead of texting it —
+// meaning anyone who knows a phone number can "log in" as it. Never treat this as real
+// identity verification. Swap it out for real signInWithPhoneNumber client-side (and
+// delete these two functions) without touching anything downstream — the custom token
+// below produces a normal Firebase session with the same phone_number claim either way.
+const OTP_TTL_MS = 10 * 60 * 1000;
+
+async function requestSimulatedOtp(phone) {
+  const code = String(Math.floor(1000 + Math.random() * 9000));
+  await db.collection('otps').doc(phone).set({ code, expiresAt: Date.now() + OTP_TTL_MS });
+  return code;
+}
+
+async function verifySimulatedOtp(phone, code) {
+  const ref = db.collection('otps').doc(phone);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error('Chưa yêu cầu mã OTP cho số này.');
+  const rec = snap.data();
+  if (rec.code !== String(code) || Date.now() > rec.expiresAt) throw new Error('Mã OTP không đúng hoặc đã hết hạn.');
+  await ref.delete();
+  let user;
+  try {
+    user = await auth.getUserByPhoneNumber(phone);
+  } catch (e) {
+    user = await auth.createUser({ phoneNumber: phone });
+  }
+  return auth.createCustomToken(user.uid);
 }
 
 async function ensureUser(phone) {
@@ -332,6 +363,8 @@ module.exports = {
   STATUS,
   BANNED_CONTENT_CHECKLIST,
   calcPrice,
+  requestSimulatedOtp,
+  verifySimulatedOtp,
   ensureUser,
   getWallet,
   createTopupIntent,

@@ -1,9 +1,5 @@
 import { getIdToken } from './firebase-client.js';
-
-// Frontend (Firebase Hosting) and backend (Render) are two different origins now —
-// needs the full URL, a relative '/api/...' would resolve against Firebase Hosting
-// itself and 404.
-const API_BASE_URL = 'https://thayloimuonnoi.onrender.com';
+import { API_BASE_URL } from './api-base.js';
 
 async function call(path, { httpMethod = 'GET', body, auth = true } = {}) {
   const headers = { 'Content-Type': 'application/json' };
