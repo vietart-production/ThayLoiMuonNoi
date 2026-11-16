@@ -69,7 +69,7 @@ router.post('/payos/webhook', async (req, res) => {
 router.use(requireAuth);
 
 // ---- Wallet ----
-router.get('/wallet', (req, res) => send(db.getWallet(req.phone), res));
+router.get('/wallet', (req, res) => send(db.getWallet(req.phone).then((balance) => ({ balance })), res));
 router.post('/wallet/topup-link', async (req, res) => {
   try {
     const amount = Number(req.body.amount);
