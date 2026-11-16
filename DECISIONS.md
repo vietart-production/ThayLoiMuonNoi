@@ -60,7 +60,7 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 ## 8. Việc còn mở (open items)
 
 - [ ] Chốt số giờ timeout tự xác nhận đơn (demo đang code cứng 48h).
-- [ ] Xác nhận docs payOS có hỗ trợ chi hộ (disbursement) hay không — hiện tại không cần vì đang duyệt tay thủ công.
+- [x] payOS có chi hộ thật — đã kiểm tra trực tiếp trong `@payos/node@2.0.6` (type definitions), có `payos.payouts.create/get/list/estimateCredit`. Không dùng ngay vì đã chọn duyệt tay thủ công (§4), nhưng đây là lựa chọn thật để tự động hoá sau, không phải "chưa biết có hay không" như ghi trước đây.
 - [x] Soạn danh sách nội dung cấm cụ thể cho kiểm duyệt kịch bản — bản nháp 7 mục, chưa qua review pháp lý (§6, §9).
 - [x] Thiết kế kênh report/chặn cho callee — bản nháp `report.html` + admin, chưa xác minh được danh tính người báo cáo (§6, §9).
 - [ ] Chốt % hoa hồng platform — demo đang để tạm 15% (`COMMISSION_RATE` trong `assets/mock-backend.js`), chưa phải số thật.
@@ -81,3 +81,24 @@ File mới:
 - `report.html` — form công khai cho người nhận cuộc gọi (callee) báo cáo, không cần đăng nhập.
 
 `index.html` (landing) đã được nối các nút CTA ("Đặt một cuộc gọi", "Trở thành người nói hộ", "Chọn người này" trên từng thẻ freelancer) sang các trang trên; phần giới thiệu/tính giá minh họa trên trang chủ giữ nguyên không đổi.
+
+## 10. Backend thật (Express + Firestore + payOS) — đang dựng, chưa nối với frontend
+
+Kiến trúc chốt: **Firebase Auth (Spark/free, OTP điện thoại thật) + Firestore (Spark/free, DB) + Node/Express (free trên Render, serve luôn file tĩnh + API) + payOS (thu tiền thật)**. Không dùng Cloud Functions (cần gói Blaze/thẻ) — xem lý do ở lịch sử chat, không lặp lại ở đây.
+
+File mới (ở cùng cấp với `index.html`, không có thư mục `server/` riêng):
+- `package.json`, `.env.example` — deps: `express`, `firebase-admin`, `@payos/node`, `cors`, `dotenv`.
+- `server.js` — Express app, serve file tĩnh từ gốc repo + mount `/api`.
+- `src/firebaseAdmin.js` — khởi tạo Admin SDK (dùng API kiểu module mới `firebase-admin/app`, `/firestore`, `/auth` — bản `firebase-admin@14` không còn `admin.apps`/`admin.firestore()` kiểu cũ, đã test thật bằng server boot để bắt lỗi này).
+- `src/authMiddleware.js` — xác minh Firebase ID token ở header `Authorization: Bearer ...`, lấy số điện thoại từ token đã verify (không tin số điện thoại do client tự gửi lên). `requireAdmin` kiểm theo danh sách số trong `ADMIN_PHONE_NUMBERS`.
+- `src/payos.js` — wrapper quanh `@payos/node`; `createPaymentLink`/`webhooks.verify` đã được đọc trực tiếp từ type definition của package đã cài, không phải đoán.
+- `src/db.js` — port 1:1 state machine từ `assets/mock-backend.js` (đã qua self-test) sang Firestore, dùng `db.runTransaction` cho mọi thao tác có kiểm tra-rồi-trừ tiền (tạo đơn, rút tiền) để tránh race condition khi 2 request đến cùng lúc.
+- `src/routes.js` — REST API, **có kiểm tra quyền sở hữu đơn ở server** (`assertOrderParty`: chỉ đúng buyer/freelancer của đơn đó mới gọi được hành động trên đơn) — đây là lỗ hổng "ai cũng gọi được qua console" đã nêu ở bản fake backend, giờ đã chặn thật ở backend.
+
+Đã test: `node --check` tất cả file, và **thật sự chạy `node server.js`** với một service-account giả (RSA key hợp lệ nhưng không phải tài khoản Google thật) để xác nhận server boot, serve file tĩnh (200), và 2 middleware (`requireAuth` chặn khi thiếu token, DB code chạy tới đúng bước gọi Firestore) hoạt động đúng — **chưa test được với Firebase/payOS thật** vì chưa có project/key thật.
+
+Chưa làm (còn lại để hoàn thành):
+- [ ] Frontend (`dat-don.html`, `freelancer.html`, `admin.html`, `assets/auth-widget.js`) **vẫn đang gọi `assets/mock-backend.js` (fake, localStorage)**, chưa đổi sang gọi `/api/*` thật và chưa dùng Firebase Client SDK (phone sign-in + `RecaptchaVerifier`) để đăng nhập thật. Đây là phần còn lại lớn nhất.
+- [ ] Chưa deploy lên Render — cần tài khoản Render connect vào repo GitHub, set các env var trong `.env.example`.
+- [ ] Chưa có Firebase project thật (Phone Auth, service account key) và payOS key thật để test end-to-end.
+- [ ] `ADMIN_PHONE_NUMBERS` thay cho passcode `admin123` cũ — nhưng trang `admin.html` hiện tại chưa gọi API thật nên vẫn đang dùng passcode cũ cho tới khi rewiring xong.

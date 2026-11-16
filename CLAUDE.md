@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository status
 
-This is a static, build-step-free HTML/CSS/JS site (Tailwind via CDN, no bundler, no package manifest). There is a fake backend (`assets/mock-backend.js`) backed by `localStorage` — no real server, no real payment, SMS, or telephony integration anywhere yet. Treat anything persisted here as per-browser demo data, not real state.
+Two backends currently coexist here — know which one a page actually talks to before changing anything:
+
+- **Real backend** (`server.js`, `src/`): Node/Express + Firestore (via `firebase-admin`, modular API) + payOS (`@payos/node`), meant to run on Render. No build step beyond `npm install`. Needs real env vars (see `.env.example`) to do anything — without `FIREBASE_SERVICE_ACCOUNT_JSON` it throws on boot by design.
+- **Fake backend** (`assets/mock-backend.js`): localStorage-only, no network. `dat-don.html`, `freelancer.html`, `admin.html` still call into this, not the real API — rewiring them is tracked in [DECISIONS.md](DECISIONS.md) §10 and not done yet. Don't assume a page is "real" just because `server.js` exists.
+
+The frontend itself is static HTML/CSS/JS (Tailwind via CDN, no bundler) either way.
 
 ## What this project is
 

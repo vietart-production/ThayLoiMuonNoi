@@ -1,0 +1,18 @@
+{
+  "name": "thay-loi-muon-noi",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend thật (Express + Firestore + payOS) cho Thay Loi Muon Noi, deploy tren Render.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "selftest": "node src/db.selftest.js"
+  },
+  "dependencies": {
+    "@payos/node": "^2.0.6",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "firebase-admin": "^14.5.1"
+  }
+}
