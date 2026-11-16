@@ -97,6 +97,8 @@ File mới (ở cùng cấp với `index.html`, không có thư mục `server/` 
 
 Đã test: `node --check` tất cả file, và **thật sự chạy `node server.js`** với một service-account giả (RSA key hợp lệ nhưng không phải tài khoản Google thật) để xác nhận server boot, serve file tĩnh (200), và 2 middleware (`requireAuth` chặn khi thiếu token, DB code chạy tới đúng bước gọi Firestore) hoạt động đúng — **chưa test được với Firebase/payOS thật** vì chưa có project/key thật.
 
+Đã deploy lên Render: https://thayloimuonnoi.onrender.com — tự kiểm tra `GET /healthz` và `GET /` trả 200, `GET /api/*` trả 503 với thông báo rõ ràng (đúng ý đồ, vì chưa có env var Firebase/payOS).
+
 Chưa làm (còn lại để hoàn thành):
 - [ ] Frontend (`dat-don.html`, `freelancer.html`, `admin.html`, `assets/auth-widget.js`) **vẫn đang gọi `assets/mock-backend.js` (fake, localStorage)**, chưa đổi sang gọi `/api/*` thật và chưa dùng Firebase Client SDK (phone sign-in + `RecaptchaVerifier`) để đăng nhập thật. Đây là phần còn lại lớn nhất.
 - [ ] Chưa deploy lên Render — cần tài khoản Render connect vào repo GitHub, set các env var trong `.env.example`.
