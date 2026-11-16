@@ -90,4 +90,6 @@ button:disabled{opacity:.5; cursor:progress;}
 dialog{background:var(--bg-mid); color:var(--ink); border:1px solid var(--line); border-radius:1rem; margin:auto;}
 dialog::backdrop{background:rgba(0,0,0,.65);}
 
-@media (prefers-reduced-motion:reduce){ *{transition:none !important;} }
+/* No prefers-reduced-motion rule here on purpose — same call as the snow on index.html.
+   Windows reports that preference whenever "Animation effects" is off, and the only
+   motion on these pages is a 0.15s colour fade on buttons. */
