@@ -205,8 +205,16 @@
     const amount = Number($('topupAmount').value) || 0;
     if (amount <= 0) return;
     try {
-      const { checkoutUrl } = await api.wallet.topupLink(amount);
-      location.href = checkoutUrl; // payOS hosted checkout; returns to ?topup=done on this page
+      const result = await api.wallet.topupLink(amount);
+      if (result.simulated) {
+        // TEMPORARY (DECISIONS.md §13): backend already credited the wallet without
+        // waiting for a real payment, so just refresh instead of sending the user to
+        // payOS's real checkout page. Remove this branch — go back to always
+        // redirecting to checkoutUrl — once that temporary credit is removed server-side.
+        await renderWallet();
+      } else {
+        location.href = result.checkoutUrl; // payOS hosted checkout; returns to ?topup=done on this page
+      }
     } catch (e) {
       alert(e.message);
     }

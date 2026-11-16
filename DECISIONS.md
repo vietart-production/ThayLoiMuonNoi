@@ -66,7 +66,7 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 - [ ] Chốt % hoa hồng platform — demo đang để tạm 15% (`COMMISSION_RATE` trong `assets/mock-backend.js`), chưa phải số thật.
 - [ ] Giải pháp ghi âm cuộc gọi thật (xem cảnh báo ở §6) — hiện chưa có gì, chỉ là checkbox tự khai.
 - [ ] Thay passcode admin cố định (`admin123` trong code) bằng tài khoản CSKH thật trước khi đưa cho ai ngoài dùng thử.
-- [ ] Nối OTP thật qua SMS provider — demo hiện hiển thị mã OTP ngay trên màn hình thay vì gửi SMS.
+- [ ] Nối OTP thật — vướng Firebase Phone Auth cần gói Blaze mới gửi được SMS, chưa quyết định nâng gói hay đổi sang SMS provider khác. Đang chạy tạm bằng OTP mô phỏng, xem §12 (rủi ro + cách gỡ khi sẵn sàng).
 
 ## 9. Bản demo "backend giả" (fake backend prototype)
 
@@ -107,11 +107,10 @@ Hai lỗi thật tìm ra khi rewiring, đã sửa:
 
 Việc còn mở để chạy được end-to-end thật:
 - [x] Điền giá trị thật vào `assets/firebase-config.js` — xong.
-- [ ] Bật **Phone** ở Firebase Console → Authentication → Sign-in method (nếu chưa bật).
-- [ ] Thêm domain `thayloimuonnoi-8d725.web.app` (domain Hosting, **không phải** domain Render nữa) vào Firebase Console → Authentication → Settings → Authorized domains.
-- [ ] Set `ADMIN_PHONE_NUMBERS` trên Render (số điện thoại dạng `+84...`, có thể nhiều số cách nhau bằng dấu phẩy) để vào được `admin.html`.
-- [ ] **Cập nhật `PUBLIC_BASE_URL` trên Render thành `https://thayloimuonnoi-8d725.web.app`** (giá trị cũ trỏ vào chính Render, giờ frontend đã tách sang Firebase Hosting — payOS sẽ redirect sai chỗ nếu không đổi).
-- [ ] Test luồng payOS thật từ trình duyệt (tạo link nạp tiền → thanh toán thử → webhook cộng tiền).
+- [ ] ~~Bật Phone ở Firebase Console~~ / ~~thêm Authorized domain~~ — không cần nữa trong lúc dùng OTP mô phỏng (§12), vì không dùng `signInWithPhoneNumber`/reCAPTCHA nữa. Cần làm lại khi chuyển sang Phone Auth thật.
+- [ ] Set `ADMIN_PHONE_NUMBERS` trên Render (số điện thoại dạng `+84...`, có thể nhiều số cách nhau bằng dấu phẩy) để vào được `admin.html` — chưa xác nhận đã làm.
+- [ ] **Cập nhật `PUBLIC_BASE_URL` trên Render thành `https://thayloimuonnoi-8d725.web.app`** — chưa xác nhận đã làm; vẫn cần đúng dù đang auto-success, vì `checkoutUrl` của payOS vẫn tạo thật.
+- [ ] Test webhook payOS thật — đang chủ động bỏ qua, xem §13.
 
 ## 11. Tách deploy: Firebase Hosting (frontend) / Render (backend)
 
@@ -121,3 +120,25 @@ Theo yêu cầu, đã tách làm 2 thay vì gộp chung trong 1 Render app:
 - CORS trên backend giới hạn đúng 2 domain Firebase Hosting (`.web.app` và `.firebaseapp.com`) — đã test bằng tay: origin đúng thì có header `Access-Control-Allow-Origin`, origin lạ thì không.
 - `assets/api-client.js` gọi API bằng URL tuyệt đối (`API_BASE_URL` trỏ sang Render) vì giờ khác domain với frontend.
 - Deploy frontend từ nay là lệnh `firebase deploy --only hosting` (chạy tay hoặc nhờ Claude chạy), **không tự động theo git push** như backend trên Render — khác với backend, đây là điểm cần nhớ.
+
+## 12. OTP mô phỏng (TẠM THỜI — chưa phải xác thực thật)
+
+Firebase Phone Auth gửi SMS thật **bắt buộc phải có gói Blaze** (thẻ ngân hàng), không có cách né — khác với Cloud Functions, đây không phải do kiến trúc chọn sai mà là giới hạn cứng của Firebase. Chưa quyết định nâng Blaze, nên tạm thời dùng cơ chế mô phỏng:
+
+- `src/db.js` (`requestSimulatedOtp`/`verifySimulatedOtp`): server tự sinh mã, **trả thẳng mã đó về cho người gọi** (không gửi SMS), lưu tạm trong Firestore (`otps/{phone}`, hết hạn 10 phút). Khi xác nhận đúng mã, server tạo **Firebase custom token** cho đúng số điện thoại đó (qua `auth.createUser`/`createCustomToken` — thao tác này không cần Blaze) rồi trả về client.
+- `assets/firebase-client.js`: client đổi custom token lấy phiên đăng nhập Firebase thật qua `signInWithCustomToken` — từ đây về sau `getIdToken()`, `authMiddleware.js` hoạt động y hệt như Phone Auth thật, không cần sửa gì thêm.
+- Đã test toàn bộ chuỗi thật từ ngoài (không qua trình duyệt): xin OTP → xác nhận → đổi lấy ID token qua Identity Toolkit REST API → gọi `/api/wallet` bằng token đó → **200, đúng**.
+
+**Rủi ro — không được coi đây là xác thực thật:** ai biết một số điện thoại là tự "đăng nhập" được vào số đó, không có bước xác minh quyền sở hữu số nào cả. Tuyệt đối không public cho người dùng thật khi còn ở chế độ này.
+
+**Cách quay lại thật:** chỉ cần sửa `assets/firebase-client.js` (đổi lại dùng `signInWithPhoneNumber` + `RecaptchaVerifier` như bản gốc), xoá 2 route `/api/auth/*` mô phỏng — không đụng gì tới `authMiddleware.js`, `src/routes.js` các route khác, hay bất kỳ logic nghiệp vụ nào.
+
+## 13. Nạp ví: tạm thời auto-success (TẠM THỜI — chưa dùng tiền thật)
+
+Theo yêu cầu, `/api/wallet/topup-link` vẫn gọi payOS thật để tạo payment link (`payos.paymentRequests.create`, giữ nguyên tích hợp thật), nhưng **ngay sau đó tự credit ví luôn** (`db.creditTopup(orderCode)`) thay vì chờ webhook payOS xác nhận đã thanh toán thật. Response có thêm field `simulated: true`; frontend (`dat-don.html`) thấy field này thì không redirect sang trang checkout thật của payOS nữa, chỉ refresh số dư.
+
+`creditTopup()` đã viết idempotent từ trước (nếu đã `credited` thì gọi lại là no-op) — nên nếu sau này webhook thật cũng gọi tới cùng `orderCode` thì không bị cộng tiền 2 lần, an toàn khi tắt dần cơ chế mô phỏng.
+
+**Cách quay lại thật:** xoá đúng 1 dòng `await db.creditTopup(orderCode);` trong `src/routes.js` (và bỏ field `simulated` khỏi response) — luồng sẽ quay về phụ thuộc hoàn toàn vào webhook `/api/payos/webhook` thật, không cần sửa gì khác.
+
+**Chưa test:** webhook thật (`/api/payos/webhook`) chưa từng nhận request thật nào từ payOS vì chưa có giao dịch thật nào xảy ra — khi tắt simulate, cần test riêng bước này.

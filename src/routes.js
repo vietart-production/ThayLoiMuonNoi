@@ -76,8 +76,16 @@ router.post('/wallet/topup-link', async (req, res) => {
     if (!(amount > 0)) throw new Error('Số tiền không hợp lệ.');
     const orderCode = Date.now(); // payOS orderCode must be a number unique per payment link
     await db.createTopupIntent(req.phone, amount, orderCode);
-    const link = await createTopupLink({ orderCode, amount, phone: req.phone });
-    res.json(link);
+    const link = await createTopupLink({ orderCode, amount, phone: req.phone }); // real payOS call, link/QR is real
+
+    // TEMPORARY: credit immediately instead of waiting for the real payOS webhook to
+    // confirm an actual payment (see DECISIONS.md §13). creditTopup() is idempotent, so
+    // if the real webhook also fires later for this orderCode it's a no-op, not a double
+    // credit. Delete this one line (keep everything else) once ready to require real
+    // money before crediting a wallet.
+    await db.creditTopup(orderCode);
+
+    res.json({ ...link, simulated: true });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
