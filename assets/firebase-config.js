@@ -5,10 +5,10 @@
  * account JSON on the server side.
  */
 export const firebaseConfig = {
-  apiKey: 'REPLACE_ME',
-  authDomain: 'REPLACE_ME.firebaseapp.com',
+  apiKey: 'AIzaSyDxV9eugu4BmjYXNrJFK06eN44Bp_EdqPk',
+  authDomain: 'thayloimuonnoi-8d725.firebaseapp.com',
   projectId: 'thayloimuonnoi-8d725',
-  storageBucket: 'REPLACE_ME.firebasestorage.app',
-  messagingSenderId: 'REPLACE_ME',
-  appId: 'REPLACE_ME',
+  storageBucket: 'thayloimuonnoi-8d725.firebasestorage.app',
+  messagingSenderId: '530135166727',
+  appId: '1:530135166727:web:d36b5e32fa955c79d35fa2',
 };
