@@ -449,10 +449,12 @@
   ['chars','duration','speed','emotion','timing'].forEach(id => $(id).addEventListener('input', recalc));
   recalc();
 
-  // Falling snow, ambient only — disabled for prefers-reduced-motion.
+  // Falling snow, ambient only. Deliberately NOT gated on prefers-reduced-motion: the
+  // owner asked for the snow to fall for everyone. Windows turns that preference on
+  // whenever "Animation effects" is off, which is common, and it was leaving most
+  // visitors with a dead sky on the one page whose whole mood is the snow.
   (function snow(){
     const canvas = $('snow');
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const ctx = canvas.getContext('2d');
     let w, h, flakes;
     // The canvas is position:fixed/inset:0, so its box is exactly the viewport — the
@@ -472,15 +474,13 @@
         x: Math.random()*w,
         y: Math.random()*h,
         r: Math.random()*2.2 + 0.6,
-        speed: Math.random()*0.9 + 0.5, // px per frame ≈ 30–84 px/s: a screen-crossing in 10–28s
+        // px per frame; at 60fps the full-strength range is ≈30–84 px/s, so a flake
+        // crosses an 850px screen in 10–28s.
+        speed: Math.random()*0.9 + 0.5,
         drift: Math.random()*0.6 - 0.3,
         alpha: Math.random()*0.5 + 0.3
       }));
     }
-    // A field of snow frozen in place looks like a broken page, not like a considered
-    // still image, so reduced motion hides the overlay instead of drawing a static one.
-    if (reduceMotion){ canvas.style.display = 'none'; return; }
-
     size();
     makeFlakes(110);
     window.addEventListener('resize', () => {
