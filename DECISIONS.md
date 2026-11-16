@@ -39,7 +39,7 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 - Ghi âm cuộc gọi làm bằng chứng mặc định.
 - Nếu lỡ không ghi âm được: tick "yêu cầu người thuê xác nhận" — hợp lệ khi buyer (a) xác nhận đã đạt mục đích, hoặc (b) có mặt nghe trực tiếp lúc gọi diễn ra, hoặc (c) hỏi lại người được gọi sau đó.
 - **Đóng đơn = khi buyer xác nhận.** Ghi âm chỉ lưu tới khi đơn đóng, đóng đơn thì xóa ghi âm ngay.
-- **[CHƯA CHỐT]** Cần thêm mốc tự động xác nhận sau X giờ nếu buyer im lặng không phản hồi — nếu không, đơn không bao giờ đóng khi buyer quên xác nhận, tiền kẹt vĩnh viễn trong escrow, freelancer không được trả. Giá trị X giờ đang đề xuất 48h, chưa chốt số cuối.
+- **[CHƯA CHỐT]** Cần thêm mốc tự động xác nhận sau X giờ nếu buyer im lặng không phản hồi — nếu không, đơn không bao giờ đóng khi buyer quên xác nhận, tiền kẹt vĩnh viễn trong escrow, freelancer không được trả. Bản demo (xem §9) đã code cứng X = 48h để có cái chạy, nhưng số này vẫn chưa được bạn chốt chính thức — đổi `CONFIRM_TIMEOUT_HOURS` trong `assets/mock-backend.js` khi quyết định số khác.
 - Có tổng đài CSKH xử lý tranh chấp (nghe lại ghi âm trong thời gian còn lưu để quyết định hoàn/giải ngân).
 
 ## 6. Vị trí pháp lý (theo quyết định của chủ dự án)
@@ -47,8 +47,9 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 - Luật VN không cấm ghi âm cuộc gọi nếu nội dung hợp lệ (có kiểm duyệt trước) — quan điểm đã chốt của chủ dự án.
 - Không áp dụng KYC bằng giấy tờ tùy thân cho người dùng; định danh qua SĐT+OTP khi đăng ký, qua số TK ngân hàng khi rút tiền.
 - Rủi ro còn cần theo dõi (chưa có giải pháp cụ thể, ghi lại để không quên):
-  - Chưa có kênh riêng cho callee (người thứ ba bị gọi) report/chặn nếu không muốn nhận cuộc gọi dạng này nữa.
-  - Chưa có danh sách cụ thể nội dung bị cấm trong kiểm duyệt kịch bản (đe dọa, đòi nợ, mạo danh, nội dung với người dưới 18 tuổi...).
+  - Kênh report/chặn cho callee: có bản nháp ở `report.html` (xem §9) — form công khai không cần đăng nhập, admin xem và có thể khóa tài khoản freelancer liên quan. Chưa có cách nào xác minh danh tính người gửi báo cáo, nên vẫn có thể bị spam/report sai.
+  - Danh sách nội dung cấm: có bản nháp 7 mục trong `BANNED_CONTENT_CHECKLIST` (`assets/mock-backend.js`), hiển thị cho admin tick tay khi duyệt kịch bản — chưa review bởi ai có chuyên môn pháp lý, chỉ là danh sách hợp lý thông thường.
+  - **Ghi âm cuộc gọi thực ra chưa có gì ở lớp kỹ thuật** — platform không tham gia vào cuộc gọi (freelancer gọi bằng SIM/điện thoại cá nhân của họ), nên không thể tự ghi âm server-side. "Có ghi âm hay không" hiện chỉ là một checkbox freelancer tự khai, không có file ghi âm thật nào được tạo/upload. Nếu muốn ghi âm thật làm bằng chứng, cần: (a) freelancer tự ghi âm bằng app ghi âm cuộc gọi trên máy họ rồi upload file lên platform, hoặc (b) platform làm cầu nối gọi qua VoIP để tự ghi âm — (b) là thay đổi lớn, không hợp với quyết định "freelancer dùng SIM của mình" ở §4.
 
 ## 7. Thị trường / đối thủ (đã research, chưa tìm thấy đối thủ trực tiếp)
 
@@ -58,7 +59,25 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 
 ## 8. Việc còn mở (open items)
 
-- [ ] Chốt số giờ timeout tự xác nhận đơn.
+- [ ] Chốt số giờ timeout tự xác nhận đơn (demo đang code cứng 48h).
 - [ ] Xác nhận docs payOS có hỗ trợ chi hộ (disbursement) hay không — hiện tại không cần vì đang duyệt tay thủ công.
-- [ ] Soạn danh sách nội dung cấm cụ thể cho kiểm duyệt kịch bản.
-- [ ] Thiết kế kênh report/chặn cho callee.
+- [x] Soạn danh sách nội dung cấm cụ thể cho kiểm duyệt kịch bản — bản nháp 7 mục, chưa qua review pháp lý (§6, §9).
+- [x] Thiết kế kênh report/chặn cho callee — bản nháp `report.html` + admin, chưa xác minh được danh tính người báo cáo (§6, §9).
+- [ ] Chốt % hoa hồng platform — demo đang để tạm 15% (`COMMISSION_RATE` trong `assets/mock-backend.js`), chưa phải số thật.
+- [ ] Giải pháp ghi âm cuộc gọi thật (xem cảnh báo ở §6) — hiện chưa có gì, chỉ là checkbox tự khai.
+- [ ] Thay passcode admin cố định (`admin123` trong code) bằng tài khoản CSKH thật trước khi đưa cho ai ngoài dùng thử.
+- [ ] Nối OTP thật qua SMS provider — demo hiện hiển thị mã OTP ngay trên màn hình thay vì gửi SMS.
+
+## 9. Bản demo "backend giả" (fake backend prototype)
+
+Đã dựng toàn bộ luồng chính bằng HTML/JS thuần + Tailwind CDN (giữ đúng stack đã có ở `index.html`, không thêm framework/build step), dữ liệu lưu trong `localStorage` của trình duyệt — **không đồng bộ giữa máy/trình duyệt khác nhau, không phải dữ liệu thật**. Mục đích: đi hết luồng nghiệp vụ để test UX trước khi nối backend/thanh toán/SMS thật.
+
+File mới:
+- `assets/mock-backend.js` — toàn bộ logic nghiệp vụ (auth OTP giả, ví, đơn hàng + state machine escrow, rút tiền, report), set thiết kế để khi có backend thật chỉ cần thay phần thân từng hàm bằng `fetch(...)`, chữ ký hàm giữ nguyên. Có `TLMN._selfTest()` gọi tay trong console để kiểm tra nhanh luồng tạo đơn → duyệt → gọi → xác nhận → rút tiền có đúng số không.
+- `assets/app.css`, `assets/auth-widget.js` — style và ô đăng nhập SĐT+OTP dùng chung giữa các trang.
+- `dat-don.html` — luồng người thuê: chọn người nói hộ, viết kịch bản, tính giá, đặt đơn, nạp ví (giả), xác nhận/báo tranh chấp/chấm điểm.
+- `freelancer.html` — luồng người cho thuê: tạo hồ sơ tự chấm giọng/số, xử lý đơn được giao, yêu cầu rút tiền.
+- `admin.html` — CSKH: duyệt kịch bản (có checklist nội dung cấm), xử lý tranh chấp, duyệt lệnh rút tiền, xử lý report từ callee, nút chạy tay việc quét timeout 48h. Vào bằng passcode cố định trong code, chỉ dùng để demo.
+- `report.html` — form công khai cho người nhận cuộc gọi (callee) báo cáo, không cần đăng nhập.
+
+`index.html` (landing) đã được nối các nút CTA ("Đặt một cuộc gọi", "Trở thành người nói hộ", "Chọn người này" trên từng thẻ freelancer) sang các trang trên; phần giới thiệu/tính giá minh họa trên trang chủ giữ nguyên không đổi.

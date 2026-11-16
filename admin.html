@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CSKH / Admin — Thay Lời Muốn Nói</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="antialiased">
+<div class="content-bg">
+
+<header class="navbar sticky top-0 z-50">
+  <nav class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
+    <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói · CSKH</a>
+  </nav>
+</header>
+
+<main class="max-w-5xl mx-auto px-5 py-10">
+  <div id="gate" class="card p-5 max-w-sm">
+    <h1 class="font-bold mb-3">Đăng nhập nội bộ</h1>
+    <p class="faint text-xs mb-3">Demo: chốt tay bằng passcode cố định trong code, chưa có hệ thống tài khoản admin thật.</p>
+    <input id="passcode" type="text" placeholder="Passcode" class="w-full mb-3">
+    <button id="gateBtn" class="btn-primary rounded-full px-5 py-2 text-sm font-semibold w-full">Vào</button>
+    <p id="gateErr" class="pill-red mt-3 text-xs" style="display:none;">Sai passcode.</p>
+  </div>
+
+  <div id="app" style="display:none;">
+    <div class="flex justify-end mb-4">
+      <button id="timeoutSweep" class="btn-outline rounded-full px-4 py-2 text-xs font-semibold">Chạy kiểm tra timeout 48h (giả lập cron)</button>
+      <span id="sweepResult" class="faint text-xs ml-3 self-center"></span>
+    </div>
+
+    <section class="mb-8">
+      <h2 class="font-bold mb-3">Kịch bản chờ duyệt</h2>
+      <div id="reviewQueue" class="space-y-3"></div>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="font-bold mb-3">Tranh chấp chờ xử lý</h2>
+      <div id="disputeQueue" class="space-y-3"></div>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="font-bold mb-3">Lệnh rút tiền chờ duyệt</h2>
+      <div id="withdrawQueue" class="space-y-3"></div>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="font-bold mb-3">Báo cáo từ người nhận cuộc gọi</h2>
+      <div id="reportQueue" class="space-y-3"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="text-center faint text-xs py-8">Demo backend giả — dữ liệu lưu trong localStorage trình duyệt, chưa kết nối hệ thống thật.</footer>
+</div>
+
+<script src="assets/mock-backend.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  $('gateBtn').onclick = () => {
+    if (TLMN.Admin.checkPasscode($('passcode').value)) {
+      $('gate').style.display = 'none';
+      $('app').style.display = 'block';
+      renderAll();
+    } else {
+      $('gateErr').style.display = 'block';
+    }
+  };
+
+  function renderAll() {
+    renderReviewQueue();
+    renderDisputeQueue();
+    renderWithdrawQueue();
+    renderReportQueue();
+  }
+
+  $('timeoutSweep').onclick = () => {
+    const n = TLMN.Order.checkTimeouts();
+    $('sweepResult').textContent = `Đã tự xác nhận ${n} đơn quá 48h không phản hồi.`;
+    renderAll();
+  };
+
+  function renderReviewQueue() {
+    const list = TLMN.Order.listPendingReview();
+    $('reviewQueue').innerHTML = list.length
+      ? list.map((o) => {
+          const f = TLMN.Freelancer.get(o.freelancerPhone);
+          const checklistId = 'cl_' + o.id;
+          return `
+          <div class="card p-4">
+            <p class="font-semibold text-sm">Đơn ${o.id.slice(-6)} · ${f ? f.name : o.freelancerPhone} · ${o.price.toLocaleString('vi-VN')}đ</p>
+            <p class="mt-2 text-sm" style="white-space:pre-wrap;">"${o.script}"</p>
+            <div id="${checklistId}" class="mt-3 grid sm:grid-cols-2 gap-1 text-xs faint">
+              ${TLMN.BANNED_CONTENT_CHECKLIST.map((c, i) => `
+                <label class="flex items-center gap-1.5"><input type="checkbox" class="flag-check" data-order="${o.id}" value="${c}"> ${c}</label>
+              `).join('')}
+            </div>
+            <div class="mt-3 flex gap-2">
+              <button class="approve-script btn-primary rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${o.id}">Duyệt</button>
+              <button class="reject-script btn-outline rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${o.id}">Từ chối & hoàn tiền</button>
+            </div>
+          </div>`;
+        }).join('')
+      : '<p class="faint text-sm">Không có đơn nào đang chờ.</p>';
+
+    document.querySelectorAll('.approve-script').forEach((btn) => {
+      btn.onclick = () => {
+        const flags = Array.from(document.querySelectorAll(`.flag-check[data-order="${btn.dataset.id}"]:checked`)).map((c) => c.value);
+        if (flags.length) {
+          alert('Có nội dung bị đánh dấu, không thể duyệt. Hãy từ chối đơn này.');
+          return;
+        }
+        TLMN.Order.adminReviewScript(btn.dataset.id, { approve: true, bannedFlags: [] });
+        renderReviewQueue();
+      };
+    });
+    document.querySelectorAll('.reject-script').forEach((btn) => {
+      btn.onclick = () => {
+        const flags = Array.from(document.querySelectorAll(`.flag-check[data-order="${btn.dataset.id}"]:checked`)).map((c) => c.value);
+        TLMN.Order.adminReviewScript(btn.dataset.id, { approve: false, bannedFlags: flags });
+        renderReviewQueue();
+      };
+    });
+  }
+
+  function renderDisputeQueue() {
+    const list = TLMN.Order.listDisputed();
+    $('disputeQueue').innerHTML = list.length
+      ? list.map((o) => `
+        <div class="card p-4">
+          <p class="font-semibold text-sm">Đơn ${o.id.slice(-6)} · ${o.price.toLocaleString('vi-VN')}đ</p>
+          <p class="faint text-xs mt-1">Lý do: ${o.disputeReason}</p>
+          <p class="faint text-xs">Có ghi âm lúc báo xong cuộc gọi: ${o.hasRecording ? 'Có' : 'Không'}</p>
+          <div class="mt-3 flex gap-2">
+            <button class="resolve-dispute btn-primary rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${o.id}" data-decision="payout">Giải ngân cho người nói hộ</button>
+            <button class="resolve-dispute btn-outline rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${o.id}" data-decision="refund">Hoàn tiền người thuê</button>
+          </div>
+        </div>`).join('')
+      : '<p class="faint text-sm">Không có tranh chấp nào.</p>';
+
+    document.querySelectorAll('.resolve-dispute').forEach((btn) => {
+      btn.onclick = () => {
+        TLMN.Order.adminResolveDispute(btn.dataset.id, { decision: btn.dataset.decision });
+        renderDisputeQueue();
+      };
+    });
+  }
+
+  function renderWithdrawQueue() {
+    const list = TLMN.Withdrawal.listPending();
+    $('withdrawQueue').innerHTML = list.length
+      ? list.map((w) => `
+        <div class="card p-4 flex justify-between items-center flex-wrap gap-2">
+          <p class="text-sm">${w.phone} · ${w.amount.toLocaleString('vi-VN')}đ → ${w.bankNumber} (${w.bankHolder})</p>
+          <div class="flex gap-2">
+            <button class="wd-approve btn-primary rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${w.id}">Đã chuyển khoản</button>
+            <button class="wd-reject btn-outline rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${w.id}">Từ chối</button>
+          </div>
+        </div>`).join('')
+      : '<p class="faint text-sm">Không có lệnh rút nào.</p>';
+
+    document.querySelectorAll('.wd-approve').forEach((btn) => { btn.onclick = () => { TLMN.Withdrawal.adminApprove(btn.dataset.id); renderWithdrawQueue(); }; });
+    document.querySelectorAll('.wd-reject').forEach((btn) => { btn.onclick = () => { TLMN.Withdrawal.adminReject(btn.dataset.id); renderWithdrawQueue(); }; });
+  }
+
+  function renderReportQueue() {
+    const list = TLMN.Report.listPending();
+    $('reportQueue').innerHTML = list.length
+      ? list.map((r) => `
+        <div class="card p-4">
+          <p class="text-sm">${r.description || '(không có mô tả)'}</p>
+          <p class="faint text-xs mt-1">Số gọi tới (theo người báo cáo): ${r.callerHint || 'không rõ'}</p>
+          <div class="mt-3 flex gap-2 flex-wrap items-center">
+            <select class="report-freelancer text-xs" data-id="${r.id}">
+              <option value="">— chọn người nói hộ để khóa (nếu xác định được) —</option>
+              ${TLMN.Freelancer.listAll().map((f) => `<option value="${f.phone}">${f.name} (${f.phone})</option>`).join('')}
+            </select>
+            <button class="report-block btn-outline rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${r.id}">Khóa tài khoản đó</button>
+            <button class="report-dismiss btn-dark rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${r.id}">Bỏ qua</button>
+          </div>
+        </div>`).join('')
+      : '<p class="faint text-sm">Không có báo cáo nào.</p>';
+
+    document.querySelectorAll('.report-dismiss').forEach((btn) => { btn.onclick = () => { TLMN.Report.adminDismiss(btn.dataset.id); renderReportQueue(); }; });
+    document.querySelectorAll('.report-block').forEach((btn) => {
+      btn.onclick = () => {
+        const phone = document.querySelector(`.report-freelancer[data-id="${btn.dataset.id}"]`).value;
+        if (!phone) { alert('Chọn người nói hộ cần khóa trước.'); return; }
+        TLMN.Report.adminBlockFreelancer(btn.dataset.id, phone);
+        renderReportQueue();
+      };
+    });
+  }
+</script>
+</body>
+</html>
