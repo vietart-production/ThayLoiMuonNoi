@@ -4,7 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository status
 
-Live at https://thayloimuonnoi.onrender.com. Real backend end to end now: `server.js`/`src/` (Node/Express + Firestore via `firebase-admin` + payOS via `@payos/node`) on Render, and the frontend (`dat-don.html`, `freelancer.html`, `admin.html`, `report.html`) calls it for real through `assets/api-client.js`, with login via real Firebase Phone Auth in `assets/firebase-client.js`. No build step beyond `npm install`.
+Split deployment, two different origins:
+
+- **Frontend** — `index.html`, `dat-don.html`, `freelancer.html`, `admin.html`, `report.html`, `assets/` — deployed to **Firebase Hosting** (`firebase deploy --only hosting`) at https://thayloimuonnoi-8d725.web.app. `firebase.json`'s `ignore` list keeps backend files (`server.js`, `src/**`, `package*.json`, docs) out of that deploy — the repo root doubles as both the hosting public dir and the backend's working dir, so don't assume everything at root is frontend-servable.
+- **Backend** — `server.js`/`src/`, Node/Express + Firestore (`firebase-admin`) + payOS (`@payos/node`), deployed to **Render** (API-only, no static serving) at https://thayloimuonnoi.onrender.com, auto-deploys on push to `main`. CORS is locked to the Firebase Hosting origins (`server.js`) — a frontend change that needs a new origin (custom domain, etc.) means updating that list too.
+
+`assets/api-client.js` calls the Render API by **absolute URL** (`API_BASE_URL` constant) since the two are cross-origin now — don't revert that to a relative `/api/...` path. payOS's `returnUrl`/`cancelUrl` (`src/payos.js`) come from `PUBLIC_BASE_URL`, which must point at the Firebase Hosting URL, not Render.
 
 `assets/mock-backend.js` (localStorage-only fake backend) is no longer wired into any page — it's dead code kept around for reference, not a fallback. Don't resurrect it; if something needs fixing, fix the real path (`src/db.js` server-side, or the page's own `<script type="module">` client-side).
 

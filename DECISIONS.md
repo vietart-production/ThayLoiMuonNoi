@@ -106,8 +106,18 @@ Hai lỗi thật tìm ra khi rewiring, đã sửa:
 - Firestore `Timestamp` không serialize được qua `JSON.stringify` (ra `{_seconds, _nanoseconds}` thay vì millis) — đã thêm bước `serialize()` chung trong `send()` ở `src/routes.js`, áp dụng cho mọi response.
 
 Việc còn mở để chạy được end-to-end thật:
-- [ ] Điền giá trị thật vào `assets/firebase-config.js` (apiKey, appId...) — lấy ở Firebase Console → Project settings → Your apps → Web app.
+- [x] Điền giá trị thật vào `assets/firebase-config.js` — xong.
 - [ ] Bật **Phone** ở Firebase Console → Authentication → Sign-in method (nếu chưa bật).
-- [ ] Thêm domain `thayloimuonnoi.onrender.com` vào Firebase Console → Authentication → Settings → Authorized domains (reCAPTCHA sẽ chặn nếu thiếu).
+- [ ] Thêm domain `thayloimuonnoi-8d725.web.app` (domain Hosting, **không phải** domain Render nữa) vào Firebase Console → Authentication → Settings → Authorized domains.
 - [ ] Set `ADMIN_PHONE_NUMBERS` trên Render (số điện thoại dạng `+84...`, có thể nhiều số cách nhau bằng dấu phẩy) để vào được `admin.html`.
+- [ ] **Cập nhật `PUBLIC_BASE_URL` trên Render thành `https://thayloimuonnoi-8d725.web.app`** (giá trị cũ trỏ vào chính Render, giờ frontend đã tách sang Firebase Hosting — payOS sẽ redirect sai chỗ nếu không đổi).
 - [ ] Test luồng payOS thật từ trình duyệt (tạo link nạp tiền → thanh toán thử → webhook cộng tiền).
+
+## 11. Tách deploy: Firebase Hosting (frontend) / Render (backend)
+
+Theo yêu cầu, đã tách làm 2 thay vì gộp chung trong 1 Render app:
+- **Frontend** → Firebase Hosting (`firebase deploy --only hosting`), domain `https://thayloimuonnoi-8d725.web.app`. Config qua `firebase.json` (ignore các file backend) + `.firebaserc` (chọn project `thayloimuonnoi-8d725`).
+- **Backend** → Render, giờ **chỉ còn API** (`server.js` đã bỏ `express.static`), domain `https://thayloimuonnoi.onrender.com`.
+- CORS trên backend giới hạn đúng 2 domain Firebase Hosting (`.web.app` và `.firebaseapp.com`) — đã test bằng tay: origin đúng thì có header `Access-Control-Allow-Origin`, origin lạ thì không.
+- `assets/api-client.js` gọi API bằng URL tuyệt đối (`API_BASE_URL` trỏ sang Render) vì giờ khác domain với frontend.
+- Deploy frontend từ nay là lệnh `firebase deploy --only hosting` (chạy tay hoặc nhờ Claude chạy), **không tự động theo git push** như backend trên Render — khác với backend, đây là điểm cần nhớ.
