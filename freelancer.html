@@ -16,7 +16,11 @@
 <header class="navbar sticky top-0 z-50">
   <nav class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
     <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói</a>
-    <a href="dat-don.html" class="muted text-sm hover:text-[var(--gold-bright)]">Đặt một cuộc gọi</a>
+    <div class="hidden sm:flex items-center gap-4 text-sm">
+      <a href="dat-don.html" class="muted hover:text-[var(--gold-bright)]">Đặt một cuộc gọi</a>
+      <a href="freelancer.html" class="muted hover:text-[var(--gold-bright)]">Trở thành người nói hộ</a>
+      <a href="report.html" class="muted hover:text-[var(--gold-bright)]">Báo cáo cuộc gọi</a>
+    </div>
   </nav>
 </header>
 
@@ -71,7 +75,11 @@
   </div>
 </main>
 
-<footer class="text-center faint text-xs py-8">Thay Lời Muốn Nói — backend thật (Firebase Auth + Firestore + payOS).</footer>
+<footer class="border-t py-8 text-center text-xs" style="border-color:var(--line); color:var(--ink-faint);">
+  <div class="mb-2" style="font-size:16px; opacity:.7;">🎄</div>
+  Thay Lời Muốn Nói — nền tảng thuê người nói hộ lời bạn muốn gửi. Đăng nhập và thanh toán hiện đang ở chế độ thử nghiệm.
+  <div class="mt-2"><a href="report.html" class="hover:text-[var(--gold-bright)]" style="text-decoration:underline;">Bạn vừa nhận một cuộc gọi và muốn báo cáo?</a></div>
+</footer>
 </div>
 
 <script type="module">
