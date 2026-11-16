@@ -2,6 +2,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.3.0/firebas
 import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js';
 import { firebaseConfig } from './firebase-config.js';
 import { API_BASE_URL } from './api-base.js';
+import { guard } from './ui.js';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -27,72 +28,72 @@ function toE164(localPhone) {
  * otherwise after the user completes the OTP step.
  */
 export function mountAuthWidget(el, onLogin) {
-  onAuthStateChanged(auth, (user) => {
-    if (user && user.phoneNumber) onLogin({ phone: user.phoneNumber });
-  });
-  if (auth.currentUser) return; // onAuthStateChanged above will fire for it
-
   let phoneE164 = null;
+  // Don't flash the login form at someone who is already signed in — wait for Firebase
+  // to say which it is.
+  el.innerHTML = '<p class="faint text-sm">Đang kiểm tra đăng nhập…</p>';
+  onAuthStateChanged(auth, (user) => {
+    if (user && user.phoneNumber) {
+      el.innerHTML = '';
+      showUser(user.phoneNumber);
+      onLogin({ phone: user.phoneNumber });
+    } else {
+      render('phone');
+    }
+  });
+
+  // Header slot (present on logged-in pages): who is signed in + sign out.
+  function showUser(phone) {
+    const box = document.getElementById('userBox');
+    if (!box) return;
+    box.innerHTML = `<span class="faint">${phone.replace(/^\+84/, '0')}</span>
+      <button class="underline hover:text-[var(--gold-bright)]">Đăng xuất</button>`;
+    box.querySelector('button').onclick = async () => { await signOut(auth); location.reload(); };
+  }
+
+  async function post(path, body) {
+    const res = await fetch(API_BASE_URL + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    return data;
+  }
 
   function render(step, otpCode) {
-    if (step === 'phone') {
-      el.innerHTML = `
-        <div class="card p-5 max-w-sm">
-          <h3 class="font-bold mb-3">Đăng nhập bằng số điện thoại</h3>
-          <p class="faint text-xs mb-3">Tạm thời: OTP đang mô phỏng, chưa gửi SMS thật (xem DECISIONS.md §12).</p>
-          <input id="aw-phone" type="tel" placeholder="09xxxxxxxx" class="w-full mb-3">
-          <button id="aw-send" class="btn-primary rounded-full px-5 py-2 text-sm font-semibold w-full">Gửi mã OTP</button>
-          <p id="aw-err" class="pill-red mt-3 text-xs" style="display:none;"></p>
-        </div>`;
-      el.querySelector('#aw-send').onclick = async () => {
-        const phone = el.querySelector('#aw-phone').value.trim();
-        if (!/^0\d{9,10}$/.test(phone)) return showErr('Nhập số điện thoại hợp lệ (vd 0901234567).');
+    const isPhone = step === 'phone';
+    el.innerHTML = `
+      <form class="card p-5 max-w-sm" novalidate>
+        <h2 class="font-bold text-lg mb-1">${isPhone ? 'Đăng nhập bằng số điện thoại' : 'Nhập mã OTP'}</h2>
+        <p class="faint text-xs mb-4">${isPhone
+          ? 'Chưa có tài khoản? Cứ nhập số điện thoại, tài khoản được tạo tự động.'
+          : `Chế độ thử nghiệm: chưa gửi SMS thật, mã của bạn là <strong class="accent">${otpCode}</strong>.`}</p>
+        <label for="aw-in">${isPhone ? 'Số điện thoại' : 'Mã OTP'}</label>
+        ${isPhone
+          ? '<input id="aw-in" type="tel" inputmode="numeric" autocomplete="tel" placeholder="0901234567" class="w-full mt-1 mb-4">'
+          : `<input id="aw-in" type="text" inputmode="numeric" autocomplete="one-time-code" value="${otpCode}" class="w-full mt-1 mb-4">`}
+        <button class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold w-full">${isPhone ? 'Gửi mã OTP' : 'Xác nhận'}</button>
+        ${isPhone ? '' : '<button type="button" id="aw-back" class="faint text-xs mt-3 underline w-full">Đổi số điện thoại</button>'}
+      </form>`;
+    const input = el.querySelector('#aw-in');
+    input.focus();
+    if (!isPhone) el.querySelector('#aw-back').onclick = () => render('phone');
+    el.querySelector('form').addEventListener('submit', guard(async () => {
+      if (isPhone) {
+        const phone = input.value.replace(/[\s.-]/g, '');
+        if (!/^0\d{9,10}$/.test(phone)) throw new Error('Nhập số điện thoại hợp lệ, ví dụ 0901234567.');
         phoneE164 = toE164(phone);
-        try {
-          const res = await fetch(API_BASE_URL + '/api/auth/request-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: phoneE164 }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error);
-          render('otp', data.code);
-        } catch (e) {
-          showErr(e.message);
-        }
-      };
-    } else {
-      el.innerHTML = `
-        <div class="card p-5 max-w-sm">
-          <h3 class="font-bold mb-1">Nhập mã OTP</h3>
-          <p class="faint text-xs mb-3">Mô phỏng — mã của bạn là <strong class="accent">${otpCode}</strong> (đã điền sẵn).</p>
-          <input id="aw-otp" type="text" value="${otpCode}" class="w-full mb-3">
-          <button id="aw-verify" class="btn-primary rounded-full px-5 py-2 text-sm font-semibold w-full">Xác nhận</button>
-          <p id="aw-err" class="pill-red mt-3 text-xs" style="display:none;"></p>
-        </div>`;
-      el.querySelector('#aw-verify').onclick = async () => {
-        try {
-          const res = await fetch(API_BASE_URL + '/api/auth/verify-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: phoneE164, code: el.querySelector('#aw-otp').value.trim() }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error);
-          await signInWithCustomToken(auth, data.customToken);
-          // onAuthStateChanged above fires onLogin once the SDK picks up the new session.
-        } catch (e) {
-          showErr(e.message);
-        }
-      };
-    }
+        const data = await post('/api/auth/request-otp', { phone: phoneE164 });
+        render('otp', data.code);
+      } else {
+        const data = await post('/api/auth/verify-otp', { phone: phoneE164, code: input.value.trim() });
+        await signInWithCustomToken(auth, data.customToken);
+        // onAuthStateChanged above fires onLogin once the SDK picks up the new session.
+      }
+    }));
   }
-  function showErr(msg) {
-    const e = el.querySelector('#aw-err');
-    e.textContent = msg;
-    e.style.display = 'block';
-  }
-  render('phone');
 }
 
 export async function getIdToken() {

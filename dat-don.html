@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Đặt một cuộc gọi — Thay Lời Muốn Nói</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎄</text></svg>">
 <script src="https://cdn.tailwindcss.com/3.4.16"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,15 +15,16 @@
 <div class="content-bg">
 
 <header class="navbar sticky top-0 z-50">
-  <nav class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
+  <nav class="max-w-5xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
     <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói</a>
-    <div class="flex items-center gap-3">
-      <div class="hidden sm:flex items-center gap-4 text-sm">
-        <a href="dat-don.html" class="muted hover:text-[var(--gold-bright)]">Đặt một cuộc gọi</a>
-        <a href="freelancer.html" class="muted hover:text-[var(--gold-bright)]">Trở thành người nói hộ</a>
-        <a href="report.html" class="muted hover:text-[var(--gold-bright)]">Báo cáo cuộc gọi</a>
-      </div>
+    <div class="flex items-center gap-3 text-xs sm:order-last">
       <span id="walletBadge" class="status-pill" style="display:none;"></span>
+      <div id="userBox" class="flex items-center gap-2"></div>
+    </div>
+    <div class="nav-links">
+      <a href="dat-don.html" aria-current="page">Đặt một cuộc gọi</a>
+      <a href="freelancer.html">Trở thành người nói hộ</a>
+      <a href="report.html">Báo cáo cuộc gọi</a>
     </div>
   </nav>
 </header>
@@ -33,29 +35,33 @@
   <div id="auth"></div>
 
   <div id="app" style="display:none;">
-    <section class="card p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
+    <section class="card p-5 mb-8 flex items-end justify-between flex-wrap gap-4">
       <div>
         <p class="muted text-sm">Số dư ví</p>
-        <p id="balanceOut" class="text-xl font-bold accent">0đ</p>
+        <p id="balanceOut" class="text-2xl font-bold accent">…</p>
       </div>
-      <div class="flex items-center gap-2">
-        <input id="topupAmount" type="number" placeholder="Số tiền" class="w-32" value="50000">
-        <button id="topupBtn" class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Nạp tiền qua payOS</button>
-      </div>
-    </section>
-
-    <section class="mb-6">
-      <h2 class="font-bold mb-3">1. Chọn người nói hộ</h2>
-      <div id="freelancerList" class="grid sm:grid-cols-2 md:grid-cols-4 gap-4"></div>
-    </section>
-
-    <section class="card p-5 mb-6">
-      <h2 class="font-bold mb-3">2. Viết kịch bản & tính giá</h2>
-      <p id="selectedFreelancerNote" class="faint text-sm mb-3">Chưa chọn người nói hộ ở trên.</p>
-      <textarea id="script" rows="4" class="w-full mb-4" placeholder="Nội dung bạn muốn người nói hộ gửi tới người ấy..."></textarea>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <form id="topupForm" class="flex items-end gap-2 flex-wrap">
         <div>
-          <label>Thời lượng gọi</label>
+          <label for="topupAmount">Số tiền nạp (đ)</label>
+          <input id="topupAmount" type="number" min="1000" step="1000" class="w-36 mt-1 block" value="50000">
+        </div>
+        <button class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Nạp tiền qua payOS</button>
+      </form>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="font-bold text-lg mb-3">1. Chọn người nói hộ</h2>
+      <div id="freelancerList" class="grid sm:grid-cols-2 md:grid-cols-4 gap-4"><p class="faint text-sm">Đang tải…</p></div>
+    </section>
+
+    <section class="card p-5 mb-8">
+      <h2 class="font-bold text-lg mb-1">2. Viết lời nhắn và tính giá</h2>
+      <p id="selectedFreelancerNote" class="faint text-sm mb-3">Chưa chọn người nói hộ ở bước 1.</p>
+      <label for="script">Lời bạn muốn gửi</label>
+      <textarea id="script" rows="4" maxlength="2000" class="w-full mt-1 mb-4" placeholder="Viết đúng điều bạn muốn người nói hộ nói với người ấy…"></textarea>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div>
+          <label for="duration">Thời lượng gọi</label>
           <select id="duration" class="w-full mt-1">
             <option value="1">Dưới 2 phút</option>
             <option value="1.3" selected>2–5 phút</option>
@@ -63,7 +69,7 @@
           </select>
         </div>
         <div>
-          <label>Tốc độ nói</label>
+          <label for="speed">Tốc độ nói</label>
           <select id="speed" class="w-full mt-1">
             <option value="1.1">Chậm & rõ</option>
             <option value="1" selected>Bình thường</option>
@@ -71,7 +77,7 @@
           </select>
         </div>
         <div>
-          <label>Cảm xúc</label>
+          <label for="emotion">Cảm xúc</label>
           <select id="emotion" class="w-full mt-1">
             <option value="0" selected>Nhẹ nhàng</option>
             <option value="0.1">Vui vẻ</option>
@@ -79,7 +85,7 @@
           </select>
         </div>
         <div>
-          <label>Giờ gọi</label>
+          <label for="timing">Giờ gọi</label>
           <select id="timing" class="w-full mt-1">
             <option value="0" selected>Giờ thường</option>
             <option value="0.15">Tối muộn</option>
@@ -87,21 +93,37 @@
           </select>
         </div>
       </div>
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <p>Chi phí: <span id="priceOut" class="text-xl font-bold accent">0đ</span> <span class="faint text-xs">(<span id="charsOut">0</span> chữ)</span></p>
-        <button id="submitOrder" class="btn-primary rounded-full px-6 py-2.5 text-sm font-semibold">Đặt đơn</button>
+      <div class="flex items-center justify-between flex-wrap gap-3 pt-4 border-t" style="border-color:var(--line);">
+        <div>
+          <p class="muted text-sm">Chi phí <span class="faint text-xs">(<span id="charsOut">0</span> chữ)</span></p>
+          <p id="priceOut" class="text-2xl font-bold accent">0đ</p>
+        </div>
+        <button id="submitOrder" class="btn-primary rounded-full px-7 py-3 text-sm font-semibold">Đặt đơn và giữ tiền tạm</button>
       </div>
-      <p id="orderErr" class="pill-red mt-3 text-xs" style="display:none;"></p>
+      <p class="faint text-xs mt-3">Tiền được giữ tạm, chỉ chuyển cho người nói hộ sau khi bạn xác nhận. Lời nhắn được kiểm duyệt trước khi gọi.</p>
     </section>
 
     <section>
-      <h2 class="font-bold mb-3">Đơn của tôi</h2>
-      <div id="myOrders" class="space-y-3"></div>
+      <h2 class="font-bold text-lg mb-3">Đơn của tôi</h2>
+      <div id="myOrders" class="space-y-3"><p class="faint text-sm">Đang tải…</p></div>
     </section>
   </div>
 </main>
 
-<footer class="border-t py-8 text-center text-xs" style="border-color:var(--line); color:var(--ink-faint);">
+<dialog id="disputeDlg" class="p-5 w-[min(92vw,26rem)]">
+  <form method="dialog">
+    <h3 class="font-bold text-lg mb-1">Báo tranh chấp</h3>
+    <p class="faint text-xs mb-3">Tiền vẫn được giữ tạm cho tới khi CSKH xử lý xong.</p>
+    <label for="disputeReason">Điều gì chưa đúng với cuộc gọi này?</label>
+    <textarea id="disputeReason" rows="3" maxlength="500" class="w-full mt-1 mb-4" required></textarea>
+    <div class="flex justify-end gap-2">
+      <button value="cancel" formnovalidate class="btn-dark rounded-full px-4 py-2 text-sm font-semibold">Huỷ</button>
+      <button value="ok" class="btn-primary rounded-full px-4 py-2 text-sm font-semibold">Gửi tranh chấp</button>
+    </div>
+  </form>
+</dialog>
+
+<footer class="border-t py-8 px-5 text-center text-xs" style="border-color:var(--line); color:var(--ink-faint);">
   <div class="mb-2" style="font-size:16px; opacity:.7;">🎄</div>
   Thay Lời Muốn Nói — nền tảng thuê người nói hộ lời bạn muốn gửi. Đăng nhập và thanh toán hiện đang ở chế độ thử nghiệm.
   <div class="mt-2"><a href="report.html" class="hover:text-[var(--gold-bright)]" style="text-decoration:underline;">Bạn vừa nhận một cuộc gọi và muốn báo cáo?</a></div>
@@ -111,15 +133,17 @@
 <script type="module">
   import { mountAuthWidget } from './assets/firebase-client.js';
   import { api } from './assets/api-client.js';
+  import { esc, toast, guard, STATUS_TONE, initials } from './assets/ui.js';
 
   const $ = (id) => document.getElementById(id);
+  const vnd = (n) => n.toLocaleString('vi-VN') + 'đ';
   const STATUS_LABEL = {
-    cho_duyet_kich_ban: 'Đang chờ duyệt kịch bản',
-    kich_ban_bi_tu_choi: 'Kịch bản bị từ chối — đã hoàn tiền',
+    cho_duyet_kich_ban: 'Đang chờ duyệt lời nhắn',
+    kich_ban_bi_tu_choi: 'Lời nhắn bị từ chối, đã hoàn tiền',
     da_duyet_cho_goi: 'Đã duyệt, chờ người nói hộ gọi',
-    cho_xac_nhan: 'Đã gọi — chờ bạn xác nhận',
+    cho_xac_nhan: 'Đã gọi, chờ bạn xác nhận',
     da_dong: 'Đã hoàn thành',
-    tranh_chap: 'Đang tranh chấp — chờ CSKH xử lý',
+    tranh_chap: 'Đang tranh chấp, chờ CSKH',
     da_hoan_tien: 'Đã hoàn tiền',
   };
   // Local mirror of the server's pricing formula (src/db.js calcPrice) — for live preview
@@ -130,15 +154,12 @@
     return Math.round((base * duration * speed * (1 + emotion + timing) * multiplier) / 500) * 500;
   }
 
-  let user = null;
   let freelancers = [];
   let selectedFreelancerPhone = new URLSearchParams(location.search).get('f') || null;
 
-  mountAuthWidget($('auth'), async (u) => {
-    user = u;
-    $('auth').style.display = 'none';
+  mountAuthWidget($('auth'), async () => {
     $('app').style.display = 'block';
-    await renderAll();
+    try { await renderAll(); } catch (e) { toast(e.message, true); }
   });
 
   async function renderAll() {
@@ -149,127 +170,118 @@
 
   async function renderWallet() {
     const { balance } = await api.wallet.get();
-    $('balanceOut').textContent = balance.toLocaleString('vi-VN') + 'đ';
+    $('balanceOut').textContent = vnd(balance);
     $('walletBadge').style.display = 'inline-flex';
-    $('walletBadge').textContent = balance.toLocaleString('vi-VN') + 'đ';
+    $('walletBadge').textContent = 'Ví: ' + vnd(balance);
   }
 
   async function renderFreelancers() {
     freelancers = await api.freelancers.list();
+    drawFreelancers();
+  }
+
+  function drawFreelancers() {
+    if (!freelancers.length) {
+      $('freelancerList').innerHTML = '<p class="faint text-sm sm:col-span-2 md:col-span-4">Chưa có người nói hộ nào đăng ký. Muốn thử? <a class="underline accent" href="freelancer.html">Tạo hồ sơ người nói hộ</a>.</p>';
+      return;
+    }
     $('freelancerList').innerHTML = freelancers.map((f) => {
-      const rating = f.rating;
       const selected = f.phone === selectedFreelancerPhone;
       return `
-      <div class="card p-4 ${selected ? '' : ''}" style="${selected ? 'border-color:rgba(232,180,92,.6);' : ''}">
-        <h3 class="font-bold">${f.name}</h3>
-        <p class="faint text-xs">${f.voiceType}</p>
-        <div class="mt-2 flex flex-wrap gap-1.5">
-          <span class="pill-pine">${f.numberType}</span>
-          <span class="pill-neutral">${f.carrier}</span>
+      <div class="card p-4 flex flex-col ${selected ? 'selected' : ''}">
+        <div class="flex items-center gap-3">
+          <div class="avatar">${esc(initials(f.name))}</div>
+          <div class="min-w-0">
+            <h3 class="font-bold truncate">${esc(f.name)}</h3>
+            <p class="faint text-xs truncate">${esc(f.voiceType)}</p>
+          </div>
         </div>
-        <p class="mt-2 text-sm star">★ <span class="faint">${rating ?? '—'} (${f.ratingCount} đơn)</span></p>
-        <button data-phone="${f.phone}" class="choose-freelancer mt-2 w-full btn-outline rounded-full py-1.5 text-sm font-semibold">
-          ${selected ? 'Đã chọn' : 'Chọn người này'}
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          <span class="pill-pine">${esc(f.numberType)}</span>
+          <span class="pill-neutral">${esc(f.carrier)}</span>
+        </div>
+        <p class="mt-3 text-sm"><span class="star">★</span> <span class="faint">${f.ratingCount ? `${f.rating} (${f.ratingCount} đơn)` : 'Chưa có đánh giá'}</span></p>
+        <p class="faint text-xs mt-0.5 mb-3">Hệ số giá ×${f.priceMultiplier}</p>
+        <button data-phone="${esc(f.phone)}" aria-pressed="${selected}" class="choose-freelancer mt-auto w-full ${selected ? 'btn-gold' : 'btn-outline'} rounded-full py-2 text-sm font-semibold">
+          ${selected ? '✓ Đã chọn' : 'Chọn người này'}
         </button>
       </div>`;
     }).join('');
     document.querySelectorAll('.choose-freelancer').forEach((btn) => {
       btn.onclick = () => {
         selectedFreelancerPhone = btn.dataset.phone;
-        renderFreelancers();
-        updateNote();
+        drawFreelancers();
         recalc();
       };
     });
-    updateNote();
+    const f = getSelectedFreelancer();
+    $('selectedFreelancerNote').textContent = f ? `Đang đặt cho ${f.name} (hệ số giá ×${f.priceMultiplier}).` : 'Chưa chọn người nói hộ ở bước 1.';
   }
 
   function getSelectedFreelancer() {
     return selectedFreelancerPhone ? freelancers.find((f) => f.phone === selectedFreelancerPhone) : null;
   }
 
-  function updateNote() {
-    const f = getSelectedFreelancer();
-    $('selectedFreelancerNote').textContent = f ? `Đang đặt cho: ${f.name} (hệ số giá x${f.priceMultiplier})` : 'Chưa chọn người nói hộ ở trên.';
-  }
-
   function recalc() {
     const chars = $('script').value.trim().length;
     $('charsOut').textContent = chars;
     const f = getSelectedFreelancer();
-    const price = previewPrice({
-      chars: Math.max(chars, 1),
+    const price = chars ? previewPrice({
+      chars,
       duration: Number($('duration').value),
       speed: Number($('speed').value),
       emotion: Number($('emotion').value),
       timing: Number($('timing').value),
-    }, f ? f.priceMultiplier : 1);
-    $('priceOut').textContent = price.toLocaleString('vi-VN') + 'đ';
-    return price;
+    }, f ? f.priceMultiplier : 1) : 0;
+    $('priceOut').textContent = vnd(price);
   }
   ['script', 'duration', 'speed', 'emotion', 'timing'].forEach((id) => $(id).addEventListener('input', recalc));
 
-  $('topupBtn').onclick = async () => {
+  $('topupForm').addEventListener('submit', guard(async () => {
     const amount = Number($('topupAmount').value) || 0;
-    if (amount <= 0) return;
-    try {
-      const result = await api.wallet.topupLink(amount);
-      if (result.simulated) {
-        // TEMPORARY (DECISIONS.md §13): backend already credited the wallet without
-        // waiting for a real payment, so just refresh instead of sending the user to
-        // payOS's real checkout page. Remove this branch — go back to always
-        // redirecting to checkoutUrl — once that temporary credit is removed server-side.
-        await renderWallet();
-      } else {
-        location.href = result.checkoutUrl; // payOS hosted checkout; returns to ?topup=done on this page
-      }
-    } catch (e) {
-      alert(e.message);
+    if (amount <= 0) throw new Error('Nhập số tiền muốn nạp.');
+    const result = await api.wallet.topupLink(amount);
+    if (result.simulated) {
+      // TEMPORARY (DECISIONS.md §13): backend already credited the wallet without
+      // waiting for a real payment, so just refresh instead of sending the user to
+      // payOS's real checkout page. Remove this branch — go back to always
+      // redirecting to checkoutUrl — once that temporary credit is removed server-side.
+      await renderWallet();
+      toast(`Đã nạp ${vnd(amount)} vào ví.`);
+    } else {
+      location.href = result.checkoutUrl; // payOS hosted checkout; returns to ?topup=done on this page
     }
-  };
+  }));
   if (new URLSearchParams(location.search).get('topup')) {
     // Webhook may take a few seconds to land — the user is back on the page before it does.
-    setTimeout(renderWallet, 3000);
+    setTimeout(() => renderWallet().catch(() => {}), 3000);
   }
 
-  $('submitOrder').onclick = async () => {
-    const err = $('orderErr');
-    err.style.display = 'none';
-    if (!selectedFreelancerPhone) {
-      err.textContent = 'Chọn một người nói hộ trước.';
-      err.style.display = 'block';
-      return;
-    }
-    const chars = $('script').value.trim().length;
-    if (chars < 1) {
-      err.textContent = 'Viết nội dung bạn muốn gửi.';
-      err.style.display = 'block';
-      return;
-    }
-    try {
-      await api.orders.create({
-        freelancerPhone: selectedFreelancerPhone,
-        script: $('script').value.trim(),
-        chars,
-        duration: Number($('duration').value),
-        speed: Number($('speed').value),
-        emotion: Number($('emotion').value),
-        timing: Number($('timing').value),
-      });
-      $('script').value = '';
-      recalc();
-      await renderWallet();
-      await renderOrders();
-    } catch (e) {
-      err.textContent = e.message;
-      err.style.display = 'block';
-    }
-  };
+  $('submitOrder').onclick = guard(async () => {
+    if (!getSelectedFreelancer()) throw new Error('Chọn một người nói hộ ở bước 1 trước.');
+    const script = $('script').value.trim();
+    if (!script) throw new Error('Viết lời bạn muốn gửi trước khi đặt đơn.');
+    await api.orders.create({
+      freelancerPhone: selectedFreelancerPhone,
+      script,
+      chars: script.length,
+      duration: Number($('duration').value),
+      speed: Number($('speed').value),
+      emotion: Number($('emotion').value),
+      timing: Number($('timing').value),
+    });
+    $('script').value = '';
+    recalc();
+    await renderWallet();
+    await renderOrders();
+    toast('Đã đặt đơn. Tiền được giữ tạm, lời nhắn đang chờ duyệt.');
+    $('myOrders').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 
   async function renderOrders() {
     const orders = await api.orders.mine();
     if (!orders.length) {
-      $('myOrders').innerHTML = '<p class="faint text-sm">Chưa có đơn nào.</p>';
+      $('myOrders').innerHTML = '<p class="faint text-sm">Chưa có đơn nào. Chọn người nói hộ ở trên để đặt đơn đầu tiên.</p>';
       return;
     }
     $('myOrders').innerHTML = orders.map((o) => {
@@ -277,55 +289,69 @@
       let actions = '';
       if (o.status === 'cho_xac_nhan') {
         actions = `
-          <div class="mt-3 flex flex-wrap gap-2">
-            <select class="confirm-method text-xs" data-id="${o.id}">
+          <div class="mt-3 flex flex-wrap gap-2 items-center">
+            <select class="confirm-method text-sm" data-id="${o.id}" aria-label="Cách bạn kiểm tra cuộc gọi">
               <option value="buyer_confirm">Tôi xác nhận đã đạt mục đích</option>
               <option value="buyer_present">Tôi có mặt nghe lúc gọi</option>
               <option value="buyer_followup">Tôi đã hỏi lại người được gọi</option>
             </select>
-            <button class="confirm-order btn-primary rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${o.id}">Xác nhận</button>
-            <button class="dispute-order btn-outline rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${o.id}">Báo tranh chấp</button>
+            <button class="confirm-order btn-primary rounded-full px-4 py-2 text-sm font-semibold" data-id="${o.id}">Xác nhận và trả tiền</button>
+            <button class="dispute-order btn-outline rounded-full px-4 py-2 text-sm font-semibold" data-id="${o.id}">Báo tranh chấp</button>
           </div>`;
       } else if (o.status === 'da_dong' && o.rating == null) {
         actions = `
-          <div class="mt-3 flex items-center gap-1 rate-order" data-id="${o.id}">
-            ${[1, 2, 3, 4, 5].map((s) => `<button class="rate-star text-lg star" data-id="${o.id}" data-stars="${s}">★</button>`).join('')}
-            <span class="faint text-xs ml-1">chấm điểm người nói hộ</span>
+          <div class="mt-3 flex items-center rate-order">
+            ${[1, 2, 3, 4, 5].map((s) => `<button class="rate-star" data-id="${o.id}" data-stars="${s}" aria-label="Chấm ${s} sao">★</button>`).join('')}
+            <span class="faint text-xs ml-2">Chấm điểm người nói hộ</span>
           </div>`;
       } else if (o.status === 'da_dong') {
-        actions = `<p class="faint text-xs mt-2">Bạn đã chấm ${o.rating} ★</p>`;
+        actions = `<p class="faint text-xs mt-2">Bạn đã chấm ${o.rating} <span class="star">★</span></p>`;
       }
       return `
         <div class="card p-4">
-          <div class="flex justify-between items-start gap-3">
-            <div>
-              <p class="font-semibold text-sm">${f ? f.name : o.freelancerPhone} — ${o.price.toLocaleString('vi-VN')}đ</p>
+          <div class="flex justify-between items-start gap-3 flex-wrap">
+            <div class="min-w-0">
+              <p class="font-semibold text-sm">${esc(f ? f.name : o.freelancerPhone)} · ${vnd(o.price)}</p>
               <p class="faint text-xs mt-0.5">${new Date(o.createdAt).toLocaleString('vi-VN')}</p>
             </div>
-            <span class="status-pill">${STATUS_LABEL[o.status] || o.status}</span>
+            <span class="status-pill ${STATUS_TONE[o.status] || ''}">${STATUS_LABEL[o.status] || o.status}</span>
           </div>
+          <p class="muted text-sm mt-2">“${esc(o.script.slice(0, 120))}${o.script.length > 120 ? '…' : ''}”</p>
           ${actions}
         </div>`;
     }).join('');
 
     document.querySelectorAll('.confirm-order').forEach((btn) => {
-      btn.onclick = async () => {
+      btn.onclick = guard(async () => {
         const method = document.querySelector(`.confirm-method[data-id="${btn.dataset.id}"]`).value;
-        try { await api.orders.confirm(btn.dataset.id, method); await renderOrders(); } catch (e) { alert(e.message); }
-      };
+        await api.orders.confirm(btn.dataset.id, method);
+        await renderOrders();
+        toast('Đã xác nhận. Tiền đã chuyển cho người nói hộ.');
+      });
     });
     document.querySelectorAll('.dispute-order').forEach((btn) => {
-      btn.onclick = async () => {
-        const reason = prompt('Mô tả ngắn lý do tranh chấp:') || 'Không rõ lý do';
-        try { await api.orders.dispute(btn.dataset.id, reason); await renderOrders(); } catch (e) { alert(e.message); }
+      btn.onclick = () => {
+        const dlg = $('disputeDlg');
+        dlg.dataset.id = btn.dataset.id;
+        dlg.returnValue = '';
+        $('disputeReason').value = '';
+        dlg.showModal();
       };
     });
     document.querySelectorAll('.rate-star').forEach((btn) => {
-      btn.onclick = async () => {
-        try { await api.orders.rate(btn.dataset.id, Number(btn.dataset.stars)); await renderOrders(); } catch (e) { alert(e.message); }
-      };
+      btn.onclick = guard(async () => {
+        await api.orders.rate(btn.dataset.id, Number(btn.dataset.stars));
+        await renderOrders();
+      });
     });
   }
+
+  $('disputeDlg').onclose = guard(async function () {
+    if (this.returnValue !== 'ok') return;
+    await api.orders.dispute(this.dataset.id, $('disputeReason').value.trim());
+    await renderOrders();
+    toast('Đã gửi tranh chấp. CSKH sẽ xem xét.');
+  });
 </script>
 </body>
 </html>

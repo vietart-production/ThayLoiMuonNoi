@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Trở thành người nói hộ — Thay Lời Muốn Nói</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎄</text></svg>">
 <script src="https://cdn.tailwindcss.com/3.4.16"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,12 +15,13 @@
 <div class="content-bg">
 
 <header class="navbar sticky top-0 z-50">
-  <nav class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
+  <nav class="max-w-5xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
     <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói</a>
-    <div class="hidden sm:flex items-center gap-4 text-sm">
-      <a href="dat-don.html" class="muted hover:text-[var(--gold-bright)]">Đặt một cuộc gọi</a>
-      <a href="freelancer.html" class="muted hover:text-[var(--gold-bright)]">Trở thành người nói hộ</a>
-      <a href="report.html" class="muted hover:text-[var(--gold-bright)]">Báo cáo cuộc gọi</a>
+    <div id="userBox" class="flex items-center gap-2 text-xs sm:order-last"></div>
+    <div class="nav-links">
+      <a href="dat-don.html">Đặt một cuộc gọi</a>
+      <a href="freelancer.html" aria-current="page">Trở thành người nói hộ</a>
+      <a href="report.html">Báo cáo cuộc gọi</a>
     </div>
   </nav>
 </header>
@@ -31,8 +33,8 @@
 
   <div id="app" style="display:none;">
     <section class="card p-5 mb-6">
-      <h2 class="font-bold mb-3">Hồ sơ của bạn</h2>
-      <p class="faint text-xs mb-3">Tự chấm loại giọng và loại số của chính bạn — kịch bản gọi sẽ được platform kiểm duyệt trước, không phải hồ sơ này.</p>
+      <h2 class="font-bold text-lg mb-1">Hồ sơ của bạn</h2>
+      <p class="faint text-xs mb-3">Bạn tự mô tả giọng và loại số của mình. Người thuê thấy hồ sơ này khi chọn người nói hộ.</p>
       <div class="grid md:grid-cols-2 gap-3">
         <div><label>Tên hiển thị</label><input id="pName" type="text" class="w-full mt-1"></div>
         <div><label>Nhà mạng</label>
@@ -40,42 +42,40 @@
             <option>Viettel</option><option>Mobifone</option><option>Vinaphone</option><option>Vietnamobile</option>
           </select>
         </div>
-        <div><label>Mô tả giọng nói (demo)</label><input id="pVoiceNote" type="text" class="w-full mt-1" placeholder="VD: giọng ấm, truyền cảm"></div>
+        <div><label>Mô tả giọng nói</label><input id="pVoiceNote" type="text" class="w-full mt-1" placeholder="VD: giọng ấm, truyền cảm"></div>
         <div><label>Loại giọng tự chấm</label><input id="pVoiceType" type="text" class="w-full mt-1" placeholder="VD: Ấm, truyền cảm"></div>
         <div><label>Loại số tự chấm</label><input id="pNumberType" type="text" class="w-full mt-1" placeholder="VD: Số đẹp · ngày sinh"></div>
         <div><label>Hệ số giá (1.0 = giá sàn)</label><input id="pMultiplier" type="number" step="0.1" min="1" value="1.2" class="w-full mt-1"></div>
       </div>
       <button id="saveProfile" class="btn-primary rounded-full px-5 py-2 text-sm font-semibold mt-4">Lưu hồ sơ</button>
-      <p id="profileSaved" class="faint text-xs mt-2" style="display:none;">Đã lưu.</p>
-    </section>
+          </section>
 
     <section class="card p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
       <div>
         <p class="muted text-sm">Số dư có thể rút</p>
-        <p id="withdrawableOut" class="text-xl font-bold accent">0đ</p>
+        <p id="withdrawableOut" class="text-2xl font-bold accent">…</p>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
-        <input id="wdAmount" type="number" placeholder="Số tiền" class="w-28">
-        <input id="wdBankNumber" type="text" placeholder="Số tài khoản" class="w-36">
-        <input id="wdBankHolder" type="text" placeholder="Tên chủ TK" class="w-40">
+        <input id="wdAmount" type="number" min="1000" step="1000" placeholder="Số tiền (đ)" aria-label="Số tiền muốn rút" class="w-32">
+        <input id="wdBankNumber" type="text" inputmode="numeric" placeholder="Số tài khoản" aria-label="Số tài khoản ngân hàng" class="w-40">
+        <input id="wdBankHolder" type="text" placeholder="Tên chủ tài khoản" aria-label="Tên chủ tài khoản" class="w-44">
         <button id="wdBtn" class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Yêu cầu rút tiền</button>
       </div>
-      <p id="wdErr" class="pill-red text-xs w-full" style="display:none;"></p>
     </section>
 
     <section class="mb-6">
-      <h2 class="font-bold mb-3">Lịch sử rút tiền</h2>
-      <div id="wdHistory" class="space-y-2"></div>
+      <h2 class="font-bold text-lg mb-3">Lịch sử rút tiền</h2>
+      <div id="wdHistory" class="space-y-2"><p class="faint text-sm">Đang tải…</p></div>
     </section>
 
     <section>
-      <h2 class="font-bold mb-3">Đơn cần xử lý</h2>
-      <div id="myOrders" class="space-y-3"></div>
+      <h2 class="font-bold text-lg mb-3">Đơn của bạn</h2>
+      <div id="myOrders" class="space-y-3"><p class="faint text-sm">Đang tải…</p></div>
     </section>
   </div>
 </main>
 
-<footer class="border-t py-8 text-center text-xs" style="border-color:var(--line); color:var(--ink-faint);">
+<footer class="border-t py-8 px-5 text-center text-xs" style="border-color:var(--line); color:var(--ink-faint);">
   <div class="mb-2" style="font-size:16px; opacity:.7;">🎄</div>
   Thay Lời Muốn Nói — nền tảng thuê người nói hộ lời bạn muốn gửi. Đăng nhập và thanh toán hiện đang ở chế độ thử nghiệm.
   <div class="mt-2"><a href="report.html" class="hover:text-[var(--gold-bright)]" style="text-decoration:underline;">Bạn vừa nhận một cuộc gọi và muốn báo cáo?</a></div>
@@ -85,25 +85,24 @@
 <script type="module">
   import { mountAuthWidget } from './assets/firebase-client.js';
   import { api } from './assets/api-client.js';
+  import { esc, toast, guard, STATUS_TONE } from './assets/ui.js';
 
   const $ = (id) => document.getElementById(id);
   const STATUS_LABEL = {
-    cho_duyet_kich_ban: 'Đang chờ platform duyệt kịch bản',
-    kich_ban_bi_tu_choi: 'Kịch bản bị từ chối',
-    da_duyet_cho_goi: 'Đã duyệt — hãy thực hiện cuộc gọi',
-    cho_xac_nhan: 'Đã báo xong — chờ người thuê xác nhận',
+    cho_duyet_kich_ban: 'Đang chờ duyệt lời nhắn',
+    kich_ban_bi_tu_choi: 'Lời nhắn bị từ chối',
+    da_duyet_cho_goi: 'Đã duyệt, hãy gọi',
+    cho_xac_nhan: 'Chờ người thuê xác nhận',
     da_dong: 'Đã hoàn thành',
-    tranh_chap: 'Đang tranh chấp — chờ CSKH xử lý',
+    tranh_chap: 'Đang tranh chấp, chờ CSKH',
     da_hoan_tien: 'Đã hoàn tiền cho người thuê',
   };
   let user = null;
 
   mountAuthWidget($('auth'), async (u) => {
     user = u;
-    $('auth').style.display = 'none';
     $('app').style.display = 'block';
-    await loadProfile();
-    await renderAll();
+    try { await loadProfile(); await renderAll(); } catch (e) { toast(e.message, true); }
   });
 
   async function loadProfile() {
@@ -118,7 +117,7 @@
     }
   }
 
-  $('saveProfile').onclick = async () => {
+  $('saveProfile').onclick = guard(async () => {
     await api.freelancer.saveProfile({
       name: $('pName').value.trim() || user.phone,
       carrier: $('pCarrier').value,
@@ -127,9 +126,9 @@
       numberType: $('pNumberType').value.trim() || 'Số thường',
       priceMultiplier: Number($('pMultiplier').value) || 1,
     });
-    $('profileSaved').style.display = 'block';
     await renderAll();
-  };
+    toast('Đã lưu hồ sơ.');
+  });
 
   async function renderAll() {
     await renderWallet();
@@ -142,30 +141,25 @@
     $('withdrawableOut').textContent = (f ? f.withdrawable : 0).toLocaleString('vi-VN') + 'đ';
   }
 
-  $('wdBtn').onclick = async () => {
-    const err = $('wdErr');
-    err.style.display = 'none';
-    try {
-      await api.withdrawals.request(Number($('wdAmount').value) || 0, $('wdBankNumber').value.trim(), $('wdBankHolder').value.trim());
-      $('wdAmount').value = '';
-      $('wdBankNumber').value = '';
-      $('wdBankHolder').value = '';
-      await renderWallet();
-      await renderWithdrawHistory();
-    } catch (e) {
-      err.textContent = e.message;
-      err.style.display = 'block';
-    }
-  };
+  $('wdBtn').onclick = guard(async () => {
+    await api.withdrawals.request(Number($('wdAmount').value) || 0, $('wdBankNumber').value.trim(), $('wdBankHolder').value.trim());
+    $('wdAmount').value = '';
+    $('wdBankNumber').value = '';
+    $('wdBankHolder').value = '';
+    await renderWallet();
+    await renderWithdrawHistory();
+    toast('Đã gửi yêu cầu rút tiền, chờ duyệt.');
+  });
 
-  const WD_LABEL = { cho_duyet: 'Chờ admin duyệt', da_chuyen: 'Đã chuyển khoản', tu_choi: 'Bị từ chối' };
+  const WD_TONE = { da_chuyen: 'ok', tu_choi: 'bad' };
+  const WD_LABEL = { cho_duyet: 'Chờ duyệt', da_chuyen: 'Đã chuyển khoản', tu_choi: 'Bị từ chối' };
   async function renderWithdrawHistory() {
     const list = await api.withdrawals.mine();
     $('wdHistory').innerHTML = list.length
       ? list.map((w) => `
-        <div class="card p-3 flex justify-between items-center text-sm">
-          <span>${w.amount.toLocaleString('vi-VN')}đ · ${w.bankNumber} (${w.bankHolder})</span>
-          <span class="status-pill">${WD_LABEL[w.status]}</span>
+        <div class="card p-3 flex justify-between items-center flex-wrap gap-2 text-sm">
+          <span>${w.amount.toLocaleString('vi-VN')}đ · ${esc(w.bankNumber)} (${esc(w.bankHolder)})</span>
+          <span class="status-pill ${WD_TONE[w.status] || ''}">${WD_LABEL[w.status]}</span>
         </div>`).join('')
       : '<p class="faint text-sm">Chưa có lệnh rút nào.</p>';
   }
@@ -173,7 +167,7 @@
   async function renderOrders() {
     const orders = await api.orders.assigned();
     if (!orders.length) {
-      $('myOrders').innerHTML = '<p class="faint text-sm">Chưa có đơn nào.</p>';
+      $('myOrders').innerHTML = '<p class="faint text-sm">Chưa có đơn nào. Lưu hồ sơ ở trên để người thuê tìm thấy bạn.</p>';
       return;
     }
     $('myOrders').innerHTML = orders.map((o) => {
@@ -181,27 +175,29 @@
       if (o.status === 'da_duyet_cho_goi') {
         actions = `
           <div class="mt-3 flex flex-wrap gap-2">
-            <button class="mark-called btn-primary rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${o.id}" data-rec="1">Đã gọi xong — có ghi âm</button>
-            <button class="mark-called btn-outline rounded-full px-4 py-1.5 text-xs font-semibold" data-id="${o.id}" data-rec="0">Đã gọi xong — không ghi âm được</button>
+            <button class="mark-called btn-primary rounded-full px-4 py-2 text-sm font-semibold" data-id="${o.id}" data-rec="1">Đã gọi xong, có ghi âm</button>
+            <button class="mark-called btn-outline rounded-full px-4 py-2 text-sm font-semibold" data-id="${o.id}" data-rec="0">Đã gọi xong, không ghi âm được</button>
           </div>`;
       }
       return `
         <div class="card p-4">
-          <div class="flex justify-between items-start gap-3">
+          <div class="flex justify-between items-start gap-3 flex-wrap">
             <div>
-              <p class="font-semibold text-sm">Đơn ${o.id.slice(-6)} — ${o.price.toLocaleString('vi-VN')}đ</p>
-              <p class="faint text-xs mt-0.5">"${o.script.slice(0, 80)}${o.script.length > 80 ? '…' : ''}"</p>
+              <p class="font-semibold text-sm">Đơn ${o.id.slice(-6)} · ${o.price.toLocaleString('vi-VN')}đ</p>
+              <p class="muted text-sm mt-1" style="white-space:pre-wrap;">“${esc(o.status === 'da_duyet_cho_goi' ? o.script : o.script.slice(0, 120) + (o.script.length > 120 ? '…' : ''))}”</p>
             </div>
-            <span class="status-pill">${STATUS_LABEL[o.status] || o.status}</span>
+            <span class="status-pill ${STATUS_TONE[o.status] || ''}">${STATUS_LABEL[o.status] || o.status}</span>
           </div>
           ${actions}
         </div>`;
     }).join('');
 
     document.querySelectorAll('.mark-called').forEach((btn) => {
-      btn.onclick = async () => {
-        try { await api.orders.markCalled(btn.dataset.id, btn.dataset.rec === '1'); await renderOrders(); } catch (e) { alert(e.message); }
-      };
+      btn.onclick = guard(async () => {
+        await api.orders.markCalled(btn.dataset.id, btn.dataset.rec === '1');
+        await renderOrders();
+        toast('Đã báo gọi xong. Chờ người thuê xác nhận.');
+      });
     });
   }
 </script>

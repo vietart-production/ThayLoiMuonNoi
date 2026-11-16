@@ -48,3 +48,46 @@ input[type=range]{accent-color:var(--gold); padding:0;}
 label{color:var(--ink); font-size:.85rem; font-weight:600;}
 .muted{color:var(--ink-dim);}
 .faint{color:var(--ink-faint);}
+
+/* ---------- polish layer ---------- */
+:root{color-scheme:dark;}
+/* Native dropdown popups ignore the translucent select background — without this the
+   option list is cream text on white on Windows. */
+select option{background:var(--bg-mid); color:var(--ink);}
+select,input[type=text],input[type=number],input[type=tel],textarea{font-size:1rem; min-height:2.5rem;} /* 16px: no iOS focus-zoom */
+::placeholder{color:var(--ink-faint);}
+a,button{transition:background .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease;}
+button{cursor:pointer;}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-outline:hover{background:rgba(232,180,92,.1);}
+.btn-dark:hover{background:rgba(26,17,12,.8);}
+.btn-gold{background:linear-gradient(135deg,var(--gold-bright),var(--gold)); color:var(--ink-dark);}
+button:active{transform:translateY(1px);}
+button:disabled{opacity:.5; cursor:progress;}
+:focus-visible{outline:2px solid var(--gold-bright); outline-offset:2px;}
+
+.nav-links{display:flex; gap:1.1rem; font-size:.875rem; width:100%; overflow-x:auto; white-space:nowrap; scrollbar-width:none;}
+.nav-links a{color:var(--ink-dim); padding:.25rem 0;}
+.nav-links a:hover{color:var(--gold-bright);}
+.nav-links a[aria-current]{color:var(--gold-bright); font-weight:600; box-shadow:inset 0 -2px 0 var(--gold);}
+@media (min-width:640px){ .nav-links{width:auto; margin-left:auto;} }
+
+.card.selected{border-color:var(--gold); background:rgba(232,180,92,.09);}
+.avatar{background:linear-gradient(135deg,var(--gold-bright),var(--ember)); color:var(--ink-dark); width:2.5rem; height:2.5rem; border-radius:9999px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; flex-shrink:0;}
+.status-pill{white-space:nowrap;}
+.status-pill.ok{background:rgba(60,107,81,.35); border-color:rgba(60,107,81,.6); color:#CFE7DA;}
+.status-pill.bad{background:rgba(194,31,43,.2); border-color:rgba(194,31,43,.45); color:#FBD6D6;}
+.form-err{background:rgba(194,31,43,.2); color:#FBD6D6; border:1px solid rgba(194,31,43,.4); border-radius:.6rem; padding:.5rem .75rem; font-size:.8rem;}
+
+/* Unrated stars start dim; hovering fills up to the pointer. */
+.rate-star{color:var(--ink-faint); font-size:1.4rem; line-height:1; padding:.15rem;}
+.rate-order:hover .rate-star{color:var(--gold);}
+.rate-order .rate-star:hover ~ .rate-star{color:var(--ink-faint);}
+
+.toast{position:fixed; left:50%; bottom:1.25rem; transform:translateX(-50%); z-index:100; max-width:min(92vw,28rem); background:var(--bg-soft); color:var(--ink); border:1px solid rgba(232,180,92,.5); border-radius:.8rem; padding:.7rem 1rem; font-size:.875rem; box-shadow:0 16px 40px -12px rgba(0,0,0,.7);}
+.toast.bad{border-color:var(--red-bright); background:#4a1414;}
+
+dialog{background:var(--bg-mid); color:var(--ink); border:1px solid var(--line); border-radius:1rem; margin:auto;}
+dialog::backdrop{background:rgba(0,0,0,.65);}
+
+@media (prefers-reduced-motion:reduce){ *{transition:none !important;} }
