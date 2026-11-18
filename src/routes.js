@@ -116,7 +116,10 @@ router.post('/auth/verify-otp', (req, res) => {
 router.post('/payos/webhook', async (req, res) => {
   try {
     const data = await verifyWebhook(req.body);
-    await db.creditTopup(data.orderCode);
+    // payOS pings this URL with a made-up orderCode when it is registered, and only
+    // accepts the URL if that ping gets a 2xx — so a payment we don't know is acked, not
+    // rejected. code '00' is a successful payment; anything else credits nothing.
+    if (data.code === '00') await db.creditTopup(data.orderCode, data.amount);
     res.json({ success: true });
   } catch (e) {
     res.status(400).json({ error: e.message });
@@ -133,20 +136,14 @@ router.post('/wallet/topup-link', async (req, res) => {
     if (!(amount > 0)) throw new Error('Số tiền không hợp lệ.');
     const orderCode = Date.now(); // payOS orderCode must be a number unique per payment link
     await db.createTopupIntent(req.phone, amount, orderCode);
-    const link = await createTopupLink({ orderCode, amount, phone: req.phone }); // real payOS call, link/QR is real
-
-    // TEMPORARY: credit immediately instead of waiting for the real payOS webhook to
-    // confirm an actual payment (see DECISIONS.md §13). creditTopup() is idempotent, so
-    // if the real webhook also fires later for this orderCode it's a no-op, not a double
-    // credit. Delete this one line (keep everything else) once ready to require real
-    // money before crediting a wallet.
-    await db.creditTopup(orderCode);
-
-    res.json({ ...link, simulated: true });
+    // The wallet is credited only by /payos/webhook, once payOS reports the money arrived.
+    const link = await createTopupLink({ orderCode, amount, phone: req.phone });
+    res.json({ checkoutUrl: link.checkoutUrl, orderCode });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 });
+router.get('/wallet/topups/:code', (req, res) => send(db.getTopupStatus(req.phone, req.params.code), res));
 
 // ---- Freelancer: own profile, voice demo, orders, withdrawals ----
 // /freelancer/me is the owner's own document, so it keeps the balance; fromPrice is

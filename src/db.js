@@ -129,12 +129,27 @@ async function createTopupIntent(phone, amount, orderCode) {
   });
 }
 
-async function creditTopup(orderCode) {
+// The buyer's own topup only — the page polls this after returning from payOS.
+async function getTopupStatus(phone, orderCode) {
+  const snap = await db.collection('topups').doc(String(orderCode)).get();
+  if (!snap.exists || snap.data().phone !== phone) throw new Error('Không tìm thấy giao dịch nạp tiền này.');
+  const { status, amount } = snap.data();
+  return { status, amount };
+}
+
+// Called only from the payOS webhook. Returns null (credits nothing) for an orderCode we
+// never issued — payOS's registration ping uses one — or a paid amount that doesn't match
+// the link we created; the wallet gets the stored amount, never the webhook's.
+async function creditTopup(orderCode, paidAmount) {
   const ref = db.collection('topups').doc(String(orderCode));
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
-    if (!snap.exists) throw new Error('Không tìm thấy giao dịch nạp tiền ' + orderCode);
+    if (!snap.exists) return null;
     const topup = snap.data();
+    if (Number(paidAmount) !== topup.amount) {
+      console.error(`topup ${orderCode}: paid ${paidAmount}, expected ${topup.amount} — not credited`);
+      return null;
+    }
     if (topup.status === 'credited') return topup; // webhook can retry/duplicate — make it idempotent
     tx.update(ref, { status: 'credited', creditedAt: FieldValue.serverTimestamp() });
     tx.set(db.collection('users').doc(topup.phone), { walletBalance: FieldValue.increment(topup.amount) }, { merge: true });
@@ -620,6 +635,7 @@ module.exports = {
   ensureUser,
   getWallet,
   createTopupIntent,
+  getTopupStatus,
   creditTopup,
   upsertFreelancerProfile,
   setAccepting,

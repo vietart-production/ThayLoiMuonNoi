@@ -80,7 +80,7 @@
               <label class="field"><span>Tên người ấy <span class="faint font-normal">(không bắt buộc)</span></span>
                 <input id="calleeName" type="text" maxlength="60" placeholder="Để người nói hộ hỏi đúng người"></label>
               <label class="field"><span>Số điện thoại người ấy</span>
-                <input id="calleePhone" type="tel" inputmode="numeric" maxlength="20" placeholder="0901234567 hoặc +84901234567"></label>
+                <input id="calleePhone" type="tel" inputmode="numeric" maxlength="20" placeholder="Số điện thoại"></label>
             </div>
             <p class="hint">Người nói hộ chỉ thấy số này sau khi lời nhắn được duyệt, và không còn thấy nữa khi cuộc gọi đã xong.</p>
           </fieldset>
@@ -201,25 +201,41 @@
   }
 
   async function topup(amount) {
-    const result = await api.wallet.topupLink(amount);
-    if (result.simulated) {
-      // TEMPORARY (DECISIONS.md §13): backend already credited the wallet without
-      // waiting for a real payment, so just refresh instead of sending the user to
-      // payOS's real checkout page. Remove this branch — go back to always
-      // redirecting to checkoutUrl — once that temporary credit is removed server-side.
-      await renderWallet();
-      toast(`Đã nạp ${vnd(amount)} vào ví.`);
-    } else {
-      location.href = result.checkoutUrl; // payOS hosted checkout; returns to ?topup=done on this page
-    }
+    const { checkoutUrl, orderCode } = await api.wallet.topupLink(amount);
+    try { sessionStorage.setItem('tlmn-topup', String(orderCode)); } catch { /* falls back to payOS's ?orderCode= */ }
+    location.href = checkoutUrl; // payOS hosted checkout; returns to ?topup=done on this page
   }
   $('topupForm').addEventListener('submit', guard(async () => {
     const choice = document.querySelector('input[name="topup"]:checked');
     await topup(Number(choice ? choice.value : 0));
   }));
-  if (params.get('topup')) {
-    // Webhook may take a few seconds to land — the user is back on the page before it does.
-    setTimeout(() => renderWallet().catch(() => {}), 3000);
+  // Back from payOS. Its webhook — the only thing that credits the wallet — can land
+  // after the buyer is already here, so ask about this one topup until it is credited.
+  if (params.get('topup') === 'done') {
+    let code = null;
+    try { code = sessionStorage.getItem('tlmn-topup'); sessionStorage.removeItem('tlmn-topup'); } catch { /* ignore */ }
+    code = code || params.get('orderCode');
+    history.replaceState(null, '', location.pathname + (pickedId ? `?f=${encodeURIComponent(pickedId)}` : ''));
+    if (code) {
+      toast('Đang chờ payOS xác nhận thanh toán…');
+      let tries = 0;
+      const poll = setInterval(async () => {
+        tries++;
+        let s = null;
+        try { s = await api.wallet.topupStatus(code); } catch { /* not signed in yet, or offline */ }
+        if (s && s.status === 'credited') {
+          clearInterval(poll);
+          await renderWallet().catch(() => {});
+          toast(`Đã nạp ${vnd(s.amount)} vào ví.`);
+        } else if (tries >= 20) {
+          clearInterval(poll);
+          toast('Chưa thấy tiền vào ví. Nếu đã chuyển khoản, đợi vài phút rồi tải lại trang.', true);
+        }
+      }, 3000);
+    }
+  } else if (params.get('topup') === 'cancelled') {
+    history.replaceState(null, '', location.pathname + (pickedId ? `?f=${encodeURIComponent(pickedId)}` : ''));
+    toast('Đã huỷ nạp tiền.');
   }
 
   function showPrompt() {

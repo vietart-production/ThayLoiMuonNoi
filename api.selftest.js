@@ -113,7 +113,7 @@ function stub(rel, exports) {
 }
 stub('./src/firebaseAdmin', { db, auth, FieldValue, Timestamp });
 stub('./src/payos', {
-  createTopupLink: async () => ({ checkoutUrl: 'https://pay.example/test' }),
+  createTopupLink: async () => ({ checkoutUrl: 'https://pay.example/test', amount: 1 }),
   verifyWebhook: async (b) => b,
 });
 
@@ -121,6 +121,7 @@ const PORT = 38000 + Math.floor(Math.random() * 1000);
 process.env.PORT = String(PORT);
 process.env.ADMIN_PHONE_NUMBERS = '+84999000999';
 process.env.DOTENV_CONFIG_QUIET = 'true';
+process.env.NO_TIMEOUT_SWEEP = '1'; // the scenario runs the sweep itself, at a known moment
 console.log = () => {}; // server.js announces itself; results go straight to stdout below
 const out = (s) => process.stdout.write(s + '\n');
 require('./server.js');
@@ -141,6 +142,8 @@ async function api(method, path, { as, body } = {}) {
 const ok = async (...a) => { const r = await api(...a); assert.equal(r.status, 200, `${a[0]} ${a[1]} -> ${r.status} ${JSON.stringify(r.data)}`); return r.data; };
 const fails = async (status, ...a) => { const r = await api(...a); assert.equal(r.status, status, `${a[0]} ${a[1]} should be ${status}, got ${r.status} ${JSON.stringify(r.data)}`); return r.data.error; };
 const balance = async (p) => (await ok('GET', '/wallet', { as: p })).balance;
+// The stubbed verifyWebhook hands the body back as the verified data.
+const webhook = (data) => ok('POST', '/payos/webhook', { body: { code: '00', ...data } });
 
 const order = (over = {}) => ({
   freelancerId: f1Id, calleePhone: '+84955555555', calleeName: 'Lan', occasion: 'Tỏ tình',
@@ -192,8 +195,21 @@ const check = (name) => checks.push(name);
   check('voice demo validated, capped, public by id, deletable');
 
   // 4. Price is computed from the script, with options checked against the form's values.
-  await ok('POST', '/wallet/topup-link', { as: B1, body: { amount: 100000 } });
+  // 4a. Only a matching, successful payOS webhook moves money into a wallet.
+  const link = await ok('POST', '/wallet/topup-link', { as: B1, body: { amount: 100000 } });
+  assert.equal(link.checkoutUrl, 'https://pay.example/test');
+  assert.equal(await balance(B1), 0, 'creating a payment link must not credit anything');
+  assert.equal((await ok('GET', `/wallet/topups/${link.orderCode}`, { as: B1 })).status, 'pending');
+  await fails(400, 'GET', `/wallet/topups/${link.orderCode}`, { as: F1 }); // someone else's topup
+  await webhook({ orderCode: 123, amount: 100000 });                      // payOS registration ping
+  await webhook({ orderCode: link.orderCode, amount: 100000, code: '01' }); // not a success
+  await webhook({ orderCode: link.orderCode, amount: 1000 });               // underpaid
+  assert.equal(await balance(B1), 0);
+  await webhook({ orderCode: link.orderCode, amount: 100000 });
+  await webhook({ orderCode: link.orderCode, amount: 100000 });             // payOS retries
   assert.equal(await balance(B1), 100000);
+  assert.equal((await ok('GET', `/wallet/topups/${link.orderCode}`, { as: B1 })).status, 'credited');
+  check('wallet credited only by a successful, matching payOS webhook, once');
   const long = 'a'.repeat(400);
   const spoofed = await ok('POST', '/orders', { as: B1, body: order({ script: long, chars: 1 }) });
   assert.equal(spoofed.price, 30000); // 400 chars → 20 × 1000đ, × 1.5 — the client's "chars: 1" is ignored

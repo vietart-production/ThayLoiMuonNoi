@@ -18,6 +18,14 @@ app.get('/healthz', (req, res) => res.send('ok'));
 
 try {
   app.use('/api', require('./src/routes'));
+  // Buyers who never confirm: close their orders after CONFIRM_TIMEOUT_HOURS so the
+  // freelancer gets paid. Runs at boot too, because Render's free tier sleeps and an
+  // interval doesn't tick while it does — the first request that wakes it catches up.
+  // ponytail: in-process timer, so lateness = however long the instance slept; a cron
+  // job hitting /api/admin/timeouts/run is the upgrade if that ever matters.
+  const { checkTimeouts } = require('./src/db');
+  const sweep = () => checkTimeouts().catch((e) => console.error('timeout sweep:', e.message));
+  if (!process.env.NO_TIMEOUT_SWEEP) { sweep(); setInterval(sweep, 60 * 60 * 1000).unref(); }
 } catch (e) {
   // Missing/invalid env vars (Firebase service account, payOS keys) shouldn't take down the
   // whole server — /healthz must keep working while that gets fixed.

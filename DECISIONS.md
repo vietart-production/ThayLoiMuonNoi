@@ -141,15 +141,20 @@ Firebase Phone Auth gửi SMS thật **bắt buộc phải có gói Blaze** (th�
 
 **Cách quay lại thật:** chỉ cần sửa `assets/firebase-client.js` (đổi lại dùng `signInWithPhoneNumber` + `RecaptchaVerifier` như bản gốc), xoá 2 route `/api/auth/*` mô phỏng — không đụng gì tới `authMiddleware.js`, `src/routes.js` các route khác, hay bất kỳ logic nghiệp vụ nào.
 
-## 13. Nạp ví: tạm thời auto-success (TẠM THỜI — chưa dùng tiền thật)
+## 13. Nạp ví: tiền thật qua payOS (đã tắt auto-success, 18/11/2026)
 
-Theo yêu cầu, `/api/wallet/topup-link` vẫn gọi payOS thật để tạo payment link (`payos.paymentRequests.create`, giữ nguyên tích hợp thật), nhưng **ngay sau đó tự credit ví luôn** (`db.creditTopup(orderCode)`) thay vì chờ webhook payOS xác nhận đã thanh toán thật. Response có thêm field `simulated: true`; frontend (`dat-don.html`) thấy field này thì không redirect sang trang checkout thật của payOS nữa, chỉ refresh số dư.
+Trước đây `/api/wallet/topup-link` tạo link payOS thật rồi **tự cộng ví luôn** không chờ thanh toán. Đã tắt theo yêu cầu chủ dự án ("ngoài OTP, nối thật hết"). Giờ:
 
-`creditTopup()` đã viết idempotent từ trước (nếu đã `credited` thì gọi lại là no-op) — nên nếu sau này webhook thật cũng gọi tới cùng `orderCode` thì không bị cộng tiền 2 lần, an toàn khi tắt dần cơ chế mô phỏng.
+- `/api/wallet/topup-link` chỉ tạo link và trả `checkoutUrl` + `orderCode`; `dat-don.html` luôn chuyển sang trang thanh toán của payOS.
+- **Chỉ webhook `/api/payos/webhook` cộng tiền**, và chỉ khi: chữ ký hợp lệ, `code === '00'` (thanh toán thành công), `orderCode` là giao dịch mình đã tạo, và số tiền khớp đúng số đã tạo link. Ví được cộng số tiền đã lưu, không phải số trong webhook. Gọi lặp (payOS retry) không cộng 2 lần.
+- `orderCode` lạ (payOS gửi request thử khi đăng ký URL webhook) được trả 200 mà không cộng gì — trả lỗi thì payOS sẽ không nhận URL.
+- Quay về `dat-don.html?topup=done`, trang hỏi `GET /api/wallet/topups/:orderCode` mỗi 3 giây (tối đa 1 phút) tới khi giao dịch `credited`.
 
-**Cách quay lại thật:** xoá đúng 1 dòng `await db.creditTopup(orderCode);` trong `src/routes.js` (và bỏ field `simulated` khỏi response) — luồng sẽ quay về phụ thuộc hoàn toàn vào webhook `/api/payos/webhook` thật, không cần sửa gì khác.
+**Bắt buộc làm 1 lần ở my.payos.vn:** khai báo Webhook URL `https://thayloimuonnoi.onrender.com/api/payos/webhook` cho kênh thanh toán đang dùng. Chưa khai báo thì người thuê chuyển tiền xong ví vẫn không lên.
 
-**Chưa test:** webhook thật (`/api/payos/webhook`) chưa từng nhận request thật nào từ payOS vì chưa có giao dịch thật nào xảy ra — khi tắt simulate, cần test riêng bước này.
+**Chưa test với tiền thật:** `api.selftest.js` giả lập webhook (đúng/sai mã, thiếu tiền, gọi lặp, ping đăng ký), nhưng webhook thật chưa nhận giao dịch nào. Cần nạp thử một khoản nhỏ sau khi khai báo URL.
+
+Mốc tự xác nhận đơn sau `CONFIRM_TIMEOUT_HOURS` (§5) giờ chạy tự động trong `server.js` (lúc khởi động và mỗi giờ) thay vì chờ admin bấm nút. Render gói free ngủ khi không có truy cập nên mốc này có thể trễ tới lần truy cập kế tiếp.
 
 ## 14. Nâng cấp marketplace (2026-11) — học theo Playerduo, Cameo, Fiverr
 

@@ -25,6 +25,7 @@ export const api = {
   wallet: {
     get: () => call('/wallet'),
     topupLink: (amount) => call('/wallet/topup-link', { httpMethod: 'POST', body: { amount } }),
+    topupStatus: (orderCode) => call(`/wallet/topups/${encodeURIComponent(orderCode)}`),
   },
   freelancer: {
     me: () => call('/freelancer/me'),
