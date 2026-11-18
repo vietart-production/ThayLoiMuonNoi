@@ -109,6 +109,8 @@
           <label class="field"><span>Nhà mạng gọi đi</span><select id="pCarrier"></select></label>
           <label class="field"><span>Loại số</span><select id="pNumberType"></select></label>
         </div>
+        <label class="field"><span>Số điện thoại</span><input id="pPhone" type="text" disabled>
+          <span class="hint">Số tài khoản của bạn, người thuê gọi tới số này. Đổi số thì đăng nhập lại bằng số mới.</span></label>
         <label class="field" id="numberNoteWrap"><span>Ý nghĩa số đẹp</span><input id="pNumberNote" type="text" maxlength="40" placeholder="Ví dụ: thần tài, trùng ngày sinh, lộc phát"></label>
         <label class="field"><span>Giờ bạn có thể gọi</span><input id="pHours" type="text" maxlength="60" placeholder="Ví dụ: 18h–23h mỗi ngày, cuối tuần cả ngày"></label>
         <label class="field"><span>Hệ số giá</span>
@@ -167,7 +169,7 @@
 </div>
 
 <script type="module">
-  import { mountAuthWidget, toLocalPhone } from './assets/firebase-client.js';
+  import { mountAuthWidget, toLocalPhone, currentPhone } from './assets/firebase-client.js';
   import { api } from './assets/api-client.js';
   import { esc, toast, guard, ask, copyText } from './assets/ui.js';
   import { VOICE_TAGS, GENDERS, REGIONS, CARRIERS, NUMBER_TYPES, vnd, dateTime, statusPill } from './assets/catalog.js';
@@ -206,7 +208,7 @@
     $('stats').hidden = !has;
     $('publicLink').hidden = !has;
     $('acceptWrap').hidden = !has;
-    if (!has) { updateFromPreview(); return; }
+    if (!has) { $('pPhone').value = toLocalPhone(currentPhone()); updateFromPreview(); return; }
     fillProfile(me);
     const link = new URL(`ho-so.html?id=${encodeURIComponent(me.publicId)}`, location.href).href;
     $('profileLink').href = link;
@@ -242,6 +244,7 @@
     document.querySelectorAll('input[name="tag"]').forEach((i) => { i.checked = tags.includes(i.value); });
     $('pCarrier').value = CARRIERS.includes(p.carrier) ? p.carrier : CARRIERS[0];
     $('pNumberType').value = /đẹp/i.test(p.numberType || '') ? 'Số đẹp' : 'Số thường';
+    $('pPhone').value = toLocalPhone(p.phone);
     $('pNumberNote').value = p.numberNote || '';
     $('pHours').value = p.hours || '';
     $('pMultiplier').value = p.priceMultiplier || 1.2;
