@@ -417,6 +417,7 @@
           <button type="button" class="faint text-xs underline" data-act="copy" data-id="${o.id}">Sao chép</button></div>
         <p class="quote mt-2">${esc(o.script)}</p>
         <p class="hint">Cách nói: ${esc(describeOptions(o))}.</p>
+        <p class="hint">Bật ghi âm cuộc gọi trên điện thoại trước khi gọi, và giữ file ít nhất 48 giờ sau khi gọi, phòng khi có tranh chấp.</p>
         <div class="mt-4 flex flex-wrap gap-2">
           <button class="btn-primary rounded-full px-4 py-2 text-sm font-semibold" data-act="called" data-rec="1" data-id="${o.id}">Đã gọi xong, có ghi âm</button>
           <button class="btn-outline rounded-full px-4 py-2 text-sm font-semibold" data-act="called" data-rec="0" data-id="${o.id}">Đã gọi xong, không ghi âm được</button>
@@ -483,7 +484,7 @@
     if (btn.dataset.act === 'called') {
       const withRec = btn.dataset.rec === '1';
       const r = await ask({ title: 'Báo đã gọi xong?', message: withRec
-        ? 'Người thuê sẽ được mời xác nhận. Giữ bản ghi âm cho tới khi đơn đóng, phòng khi có tranh chấp.'
+        ? 'Người thuê sẽ được mời xác nhận. Giữ file ghi âm trên máy ít nhất 48 giờ, phòng khi có tranh chấp.'
         : 'Không có ghi âm nên nếu người thuê báo tranh chấp, CSKH chỉ dựa được vào lời hai bên.', confirm: 'Đã gọi xong' });
       if (!r) return;
       await api.orders.markCalled(o.id, withRec);

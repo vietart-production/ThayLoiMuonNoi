@@ -40,7 +40,7 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 - **[CHƯA CHỐT — mặc định do Claude đặt, cần chủ dự án duyệt]** Huỷ đơn: buyer tự huỷ được khi lời nhắn **còn chờ duyệt** → hoàn tiền đủ ngay; người nói hộ **từ chối** được khi chờ duyệt hoặc đã duyệt nhưng chưa báo gọi (bắt buộc ghi lý do, buyer thấy lý do) → buyer được hoàn đủ. Trạng thái mới `da_huy` (`cancelledBy`: buyer/freelancer). Lý do chọn mặc định này: trước đây không có đường thoát nào — người nói hộ ốm hay trùng lịch thì đơn kẹt, tiền buyer kẹt. Chưa có chế tài cho người nói hộ từ chối nhiều lần.
 - **[CHƯA CHỐT]** Không cho tự đặt đơn với chính mình (chặn tự tạo đánh giá ảo / xoay vòng tiền).
 - Kiểm duyệt kịch bản (script) trước khi gọi.
-- Ghi âm cuộc gọi làm bằng chứng mặc định.
+- Ghi âm cuộc gọi làm bằng chứng mặc định — **người nói hộ dùng tính năng ghi âm cuộc gọi có sẵn của điện thoại** (chốt bởi chủ dự án, 18/11/2026), tức phương án (a) ở §6. File nằm trên máy người nói hộ, platform không tự có.
 - Nếu lỡ không ghi âm được: tick "yêu cầu người thuê xác nhận" — hợp lệ khi buyer (a) xác nhận đã đạt mục đích, hoặc (b) có mặt nghe trực tiếp lúc gọi diễn ra, hoặc (c) hỏi lại người được gọi sau đó.
 - **Đóng đơn = khi buyer xác nhận.** Ghi âm chỉ lưu tới khi đơn đóng, đóng đơn thì xóa ghi âm ngay.
 - **[CHƯA CHỐT]** Cần thêm mốc tự động xác nhận sau X giờ nếu buyer im lặng không phản hồi — nếu không, đơn không bao giờ đóng khi buyer quên xác nhận, tiền kẹt vĩnh viễn trong escrow, freelancer không được trả. Bản demo (xem §9) đã code cứng X = 48h để có cái chạy, nhưng số này vẫn chưa được bạn chốt chính thức — đổi `CONFIRM_TIMEOUT_HOURS` trong `assets/mock-backend.js` khi quyết định số khác.
@@ -68,7 +68,7 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 - [x] Soạn danh sách nội dung cấm cụ thể cho kiểm duyệt kịch bản — bản nháp 7 mục, chưa qua review pháp lý (§6, §9).
 - [x] Thiết kế kênh report/chặn cho callee — bản nháp `report.html` + admin, chưa xác minh được danh tính người báo cáo (§6, §9).
 - [ ] Chốt % hoa hồng platform — demo đang để tạm 15% (`COMMISSION_RATE` trong `assets/mock-backend.js`), chưa phải số thật.
-- [ ] Giải pháp ghi âm cuộc gọi thật (xem cảnh báo ở §6) — hiện chưa có gì, chỉ là checkbox tự khai.
+- [x] Giải pháp ghi âm cuộc gọi thật — chốt dùng ghi âm có sẵn của điện thoại người nói hộ (§5). Chủ dự án xác nhận các điểm phụ không quan trọng: "xoá ghi âm khi đóng đơn" chỉ áp dụng cho dữ liệu trên platform, file trên máy người nói hộ thì không đụng; việc iPhone/app Google phát thông báo ghi âm cho người được gọi là chấp nhận được. `freelancer.html` chỉ thêm dòng khuyên người nói hộ bật ghi âm trước khi gọi và giữ file ít nhất 48 giờ (bằng `CONFIRM_TIMEOUT_HOURS`, vì người thuê có thể báo tranh chấp tới lúc đó).
 - [ ] Thay passcode admin cố định (`admin123` trong code) bằng tài khoản CSKH thật trước khi đưa cho ai ngoài dùng thử.
 - [ ] Nối OTP thật — vướng Firebase Phone Auth cần gói Blaze mới gửi được SMS, chưa quyết định nâng gói hay đổi sang SMS provider khác. Đang chạy tạm bằng OTP mô phỏng, xem §12 (rủi ro + cách gỡ khi sẵn sàng).
 - [ ] **Thông báo** — hiện không có SMS/email/push nào: người nói hộ phải tự mở trang mới biết có đơn mới hay đơn vừa được duyệt, buyer phải tự mở trang mới biết người nói hộ đã gọi. Với đơn hẹn giờ (đêm Giáng sinh) đây là rủi ro thật. Cần chọn kênh (Zalo OA, SMS, email, web push).
