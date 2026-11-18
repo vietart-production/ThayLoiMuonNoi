@@ -14,26 +14,36 @@ async function call(path, { httpMethod = 'GET', body, auth = true } = {}) {
   return data;
 }
 
+const id = (v) => encodeURIComponent(v);
+
 export const api = {
   freelancers: {
     list: () => call('/freelancers', { auth: false }),
+    get: (publicId) => call(`/freelancers/${id(publicId)}`, { auth: false }),
+    voice: (publicId) => call(`/freelancers/${id(publicId)}/voice-demo`, { auth: false }),
   },
   wallet: {
     get: () => call('/wallet'),
     topupLink: (amount) => call('/wallet/topup-link', { httpMethod: 'POST', body: { amount } }),
   },
   freelancer: {
-    saveProfile: (data) => call('/freelancer/profile', { httpMethod: 'POST', body: data }),
     me: () => call('/freelancer/me'),
+    saveProfile: (data) => call('/freelancer/profile', { httpMethod: 'POST', body: data }),
+    setAccepting: (accepting) => call('/freelancer/accepting', { httpMethod: 'POST', body: { accepting } }),
+    voice: () => call('/freelancer/voice-demo'),
+    saveVoice: (audio) => call('/freelancer/voice-demo', { httpMethod: 'PUT', body: { audio } }),
+    deleteVoice: () => call('/freelancer/voice-demo', { httpMethod: 'DELETE' }),
   },
   orders: {
     mine: () => call('/orders/mine'),
     assigned: () => call('/orders/assigned'),
     create: (data) => call('/orders', { httpMethod: 'POST', body: data }),
-    markCalled: (id, hasRecording) => call(`/orders/${id}/called`, { httpMethod: 'POST', body: { hasRecording } }),
-    confirm: (id, confirmMethod) => call(`/orders/${id}/confirm`, { httpMethod: 'POST', body: { method: confirmMethod } }),
-    dispute: (id, reason) => call(`/orders/${id}/dispute`, { httpMethod: 'POST', body: { reason } }),
-    rate: (id, stars) => call(`/orders/${id}/rate`, { httpMethod: 'POST', body: { stars } }),
+    cancel: (orderId, reason) => call(`/orders/${id(orderId)}/cancel`, { httpMethod: 'POST', body: { reason } }),
+    decline: (orderId, reason) => call(`/orders/${id(orderId)}/decline`, { httpMethod: 'POST', body: { reason } }),
+    markCalled: (orderId, hasRecording) => call(`/orders/${id(orderId)}/called`, { httpMethod: 'POST', body: { hasRecording } }),
+    confirm: (orderId, confirmMethod) => call(`/orders/${id(orderId)}/confirm`, { httpMethod: 'POST', body: { method: confirmMethod } }),
+    dispute: (orderId, reason) => call(`/orders/${id(orderId)}/dispute`, { httpMethod: 'POST', body: { reason } }),
+    rate: (orderId, stars, comment) => call(`/orders/${id(orderId)}/rate`, { httpMethod: 'POST', body: { stars, comment } }),
   },
   withdrawals: {
     request: (amount, bankNumber, bankHolder) => call('/withdrawals', { httpMethod: 'POST', body: { amount, bankNumber, bankHolder } }),
@@ -44,15 +54,15 @@ export const api = {
   },
   admin: {
     pendingReview: () => call('/admin/orders/pending-review'),
-    reviewScript: (id, approve, bannedFlags) => call(`/admin/orders/${id}/review`, { httpMethod: 'POST', body: { approve, bannedFlags } }),
+    reviewScript: (orderId, approve, bannedFlags) => call(`/admin/orders/${id(orderId)}/review`, { httpMethod: 'POST', body: { approve, bannedFlags } }),
     disputed: () => call('/admin/orders/disputed'),
-    resolveDispute: (id, decision) => call(`/admin/orders/${id}/resolve-dispute`, { httpMethod: 'POST', body: { decision } }),
+    resolveDispute: (orderId, decision) => call(`/admin/orders/${id(orderId)}/resolve-dispute`, { httpMethod: 'POST', body: { decision } }),
     pendingWithdrawals: () => call('/admin/withdrawals/pending'),
-    approveWithdrawal: (id) => call(`/admin/withdrawals/${id}/approve`, { httpMethod: 'POST' }),
-    rejectWithdrawal: (id) => call(`/admin/withdrawals/${id}/reject`, { httpMethod: 'POST' }),
+    approveWithdrawal: (wdId) => call(`/admin/withdrawals/${id(wdId)}/approve`, { httpMethod: 'POST' }),
+    rejectWithdrawal: (wdId) => call(`/admin/withdrawals/${id(wdId)}/reject`, { httpMethod: 'POST' }),
     pendingReports: () => call('/admin/reports/pending'),
-    dismissReport: (id) => call(`/admin/reports/${id}/dismiss`, { httpMethod: 'POST' }),
-    blockFreelancer: (id, freelancerPhone) => call(`/admin/reports/${id}/block`, { httpMethod: 'POST', body: { freelancerPhone } }),
+    dismissReport: (reportId) => call(`/admin/reports/${id(reportId)}/dismiss`, { httpMethod: 'POST' }),
+    blockFreelancer: (reportId, freelancerPhone) => call(`/admin/reports/${id(reportId)}/block`, { httpMethod: 'POST', body: { freelancerPhone } }),
     allFreelancers: () => call('/admin/freelancers'),
     runTimeouts: () => call('/admin/timeouts/run', { httpMethod: 'POST' }),
   },

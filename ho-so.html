@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hồ sơ người nói hộ — Thay Lời Muốn Nói</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎄</text></svg>">
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+  .hero-avatar{width:5.5rem; height:5.5rem; border-radius:9999px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.8rem; background:linear-gradient(135deg,var(--gold-bright),var(--ember)); color:var(--ink-dark); flex-shrink:0;}
+  .facts{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.9rem 1.5rem;}
+  .facts dt{font-size:.75rem; color:var(--ink-faint);}
+  .facts dd{font-size:.92rem; margin-top:.1rem;}
+  .review + .review{border-top:1px solid var(--line-soft);}
+  .review-stars{color:var(--gold); letter-spacing:.05em;}
+  .review-stars .off{color:rgba(246,239,226,.2);}
+</style>
+</head>
+<body class="antialiased">
+<div class="content-bg">
+
+<header class="navbar sticky top-0 z-50">
+  <nav class="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
+    <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói</a>
+    <div id="userBox" data-login class="flex items-center gap-2 text-xs sm:order-last"></div>
+    <div class="nav-links">
+      <a href="nguoi-noi-ho.html">Tìm người nói hộ</a>
+      <a href="dat-don.html">Đơn của tôi</a>
+      <a href="freelancer.html">Trở thành người nói hộ</a>
+      <a href="report.html">Báo cáo cuộc gọi</a>
+    </div>
+  </nav>
+</header>
+
+<main class="max-w-5xl mx-auto px-5 py-8">
+  <a href="nguoi-noi-ho.html" class="text-sm faint hover:text-[var(--gold-bright)]">‹ Danh sách người nói hộ</a>
+  <div id="page" class="mt-4">
+    <div class="skeleton" style="min-height:22rem;"></div>
+  </div>
+</main>
+
+<footer class="border-t py-8 px-5 text-center text-xs" style="border-color:var(--line); color:var(--ink-faint);">
+  <div class="mb-2" style="font-size:16px; opacity:.7;">🎄</div>
+  Thay Lời Muốn Nói — nền tảng thuê người nói hộ lời bạn muốn gửi. Đăng nhập và thanh toán hiện đang ở chế độ thử nghiệm.
+  <div class="mt-2"><a href="report.html" class="hover:text-[var(--gold-bright)]" style="text-decoration:underline;">Bạn vừa nhận một cuộc gọi và muốn báo cáo?</a></div>
+</footer>
+</div>
+
+<script type="module">
+  import { mountAuthWidget } from './assets/firebase-client.js';
+  import { api } from './assets/api-client.js';
+  import { esc, initials, copyText } from './assets/ui.js';
+  import { voiceLine, voiceButton, wireVoiceButtons, vnd, monthYear, isNiceNumber, dateOnly } from './assets/catalog.js';
+
+  mountAuthWidget();
+  const $ = (id) => document.getElementById(id);
+  const id = new URLSearchParams(location.search).get('id');
+
+  const stars = (n) => `<span class="review-stars" aria-label="${n} sao">${'★'.repeat(n)}<span class="off">${'★'.repeat(5 - n)}</span></span>`;
+
+  function render(f) {
+    document.title = `${f.name} — người nói hộ — Thay Lời Muốn Nói`;
+    const orderHref = `dat-don.html?f=${encodeURIComponent(f.id)}`;
+    const facts = [
+      ['Nhà mạng gọi đi', f.carrier || 'Chưa ghi'],
+      ['Loại số', isNiceNumber(f) ? `Số đẹp${f.numberNote ? `, ${f.numberNote}` : ''}` : (f.numberType || 'Số thường')],
+      ['Giờ có thể gọi', f.hours || 'Thoả thuận khi đặt đơn'],
+      ['Tham gia', monthYear(f.joinedAt) || 'Gần đây'],
+      ['Hệ số giá', `×${f.priceMultiplier.toLocaleString('vi-VN')}`],
+    ];
+    $('page').innerHTML = `
+      <div class="grid lg:grid-cols-[minmax(0,1fr)_19rem] gap-6 items-start">
+        <div class="space-y-6">
+          <section class="card p-6">
+            <div class="flex flex-wrap items-center gap-5">
+              <div class="hero-avatar" aria-hidden="true">${esc(initials(f.name))}</div>
+              <div class="min-w-0 flex-1">
+                <h1 class="text-3xl font-bold display leading-tight">${esc(f.name)}</h1>
+                <p class="muted text-sm mt-1">${esc(voiceLine(f) || 'Người nói hộ')}</p>
+                <p class="text-sm mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                  ${f.ratingCount ? `<span><span class="star">★</span> <strong>${f.rating.toFixed(1)}</strong> <span class="faint">(${f.ratingCount} đánh giá)</span></span>` : '<span class="faint">Chưa có đánh giá</span>'}
+                  <span class="muted">${f.completedCount ? `${f.completedCount} cuộc gọi đã hoàn thành` : 'Mới tham gia'}</span>
+                  ${f.accepting ? '<span style="color:#CFE7DA;">Đang nhận đơn</span>' : '<span style="color:#FBD6D6;">Đang tạm nghỉ</span>'}
+                </p>
+              </div>
+            </div>
+            <div class="mt-6">
+              ${f.hasVoiceDemo
+                ? `<div class="flex flex-wrap items-center gap-3">${voiceButton(f.id, { big: true })}<span class="faint text-xs">Giọng mẫu do ${esc(f.name)} tự thu</span></div>`
+                : '<p class="faint text-sm">Người này chưa thu giọng mẫu.</p>'}
+            </div>
+            ${f.voiceTags.length ? `<div class="fc-tags mt-5">${f.voiceTags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+          </section>
+
+          <section class="card p-6">
+            <h2 class="font-bold text-lg mb-2">Giới thiệu</h2>
+            <p class="muted leading-relaxed" style="white-space:pre-line;">${f.bio ? esc(f.bio) : 'Chưa có lời giới thiệu.'}</p>
+            <dl class="facts mt-6">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+          </section>
+
+          <section class="card p-6">
+            <h2 class="font-bold text-lg mb-1">Đánh giá từ người thuê</h2>
+            ${f.reviews.length ? `<p class="faint text-xs mb-2">Hiện ${f.reviews.length} đánh giá gần nhất. Nội dung lời nhắn luôn được giữ kín.</p>
+              ${f.reviews.map((r) => `
+                <article class="review py-4">
+                  <div class="flex items-center justify-between gap-3 flex-wrap">
+                    ${stars(r.stars)}
+                    <span class="faint text-xs">${esc(r.buyer)}${r.occasion ? ` · ${esc(r.occasion)}` : ''} · ${esc(dateOnly(r.at))}</span>
+                  </div>
+                  ${r.comment ? `<p class="text-sm mt-2 leading-relaxed">${esc(r.comment)}</p>` : '<p class="faint text-sm mt-2">Không để lại nhận xét.</p>'}
+                </article>`).join('')}`
+              : '<p class="faint text-sm mt-2">Chưa có đánh giá nào. Người đặt đầu tiên sẽ là người viết đánh giá đầu tiên.</p>'}
+          </section>
+        </div>
+
+        <aside class="card p-6 lg:sticky lg:top-24">
+          <p class="faint text-xs">Giá khởi điểm</p>
+          <p class="text-3xl font-bold display accent">${vnd(f.fromPrice)}</p>
+          <p class="faint text-xs mt-1">Cho lời nhắn khoảng 100 chữ, gọi dưới 2 phút. Lời nhắn dài hơn, cảm xúc hay giờ gọi đặc biệt sẽ tính thêm — bạn thấy giá chính xác trước khi đặt.</p>
+          ${f.accepting
+            ? `<a href="${orderHref}" class="btn-primary block text-center rounded-full px-5 py-3 font-semibold mt-5">Đặt cuộc gọi với ${esc(f.name)}</a>`
+            : '<p class="mt-5 rounded-xl p-3 text-sm" style="background:rgba(194,31,43,.15); color:#FBD6D6;">Người này đang tạm nghỉ, chưa nhận đơn mới.</p>'}
+          <ul class="mt-5 space-y-2 text-xs muted">
+            <li>Tiền được giữ tạm, chỉ chuyển cho người nói hộ khi bạn xác nhận.</li>
+            <li>Huỷ miễn phí khi lời nhắn chưa được duyệt.</li>
+            <li>Lời nhắn được kiểm duyệt trước khi gọi.</li>
+          </ul>
+          <button id="share" type="button" class="mt-5 w-full btn-outline rounded-full py-2 text-sm font-semibold">Sao chép liên kết hồ sơ</button>
+        </aside>
+      </div>`;
+    wireVoiceButtons($('page'));
+    $('share').onclick = () => copyText(location.href, 'Đã sao chép liên kết hồ sơ.');
+  }
+
+  if (!id) {
+    $('page').innerHTML = '<div class="empty"><strong>Thiếu mã hồ sơ</strong><a class="accent underline" href="nguoi-noi-ho.html">Xem danh sách người nói hộ</a></div>';
+  } else {
+    try {
+      render(await api.freelancers.get(id));
+    } catch (e) {
+      $('page').innerHTML = `<div class="empty"><strong>Không tìm thấy hồ sơ này</strong>Có thể người này đã ngừng nhận đơn. <a class="accent underline" href="nguoi-noi-ho.html">Xem những người khác</a></div>`;
+    }
+  }
+</script>
+</body>
+</html>

@@ -47,7 +47,10 @@ h1,h2,h3,.display{font-family:var(--font-display);}
 .pill-red{background:rgba(194,31,43,.2); color:#FBD6D6; border:1px solid rgba(194,31,43,.4); border-radius:9999px; padding:.1rem .55rem; font-size:.7rem;}
 .star{color:var(--gold);}
 .accent{color:var(--gold-bright);}
-select,input[type=text],input[type=number],input[type=tel],textarea,input[type=range]{background:rgba(255,255,255,.04); color:var(--ink); border:1px solid var(--line); border-radius:.6rem; padding:.45rem .7rem;}
+/* :is() takes the specificity of its strongest argument (input[type=…]), so select and
+   textarea win over Tailwind's preflight reset, which the CDN injects *after* this file and
+   which otherwise zeroed their padding and font-size. */
+:is(select,input[type=text],input[type=number],input[type=tel],input[type=search],input[type=datetime-local],textarea,input[type=range]){background:rgba(255,255,255,.04); color:var(--ink); border:1px solid var(--line); border-radius:.6rem; padding:.45rem .7rem;}
 select:focus,input:focus,textarea:focus{outline:none; border-color:var(--gold);}
 input[type=range]{accent-color:var(--gold); padding:0;}
 label{color:var(--ink); font-size:.85rem; font-weight:600;}
@@ -59,7 +62,7 @@ label{color:var(--ink); font-size:.85rem; font-weight:600;}
 /* Native dropdown popups ignore the translucent select background — without this the
    option list is cream text on white on Windows. */
 select option{background:var(--bg-mid); color:var(--ink);}
-select,input[type=text],input[type=number],input[type=tel],textarea{font-size:1rem; min-height:2.5rem;} /* 16px: no iOS focus-zoom */
+:is(select,input[type=text],input[type=number],input[type=tel],input[type=search],input[type=datetime-local],textarea){font-size:1rem; min-height:2.5rem;} /* 16px: no iOS focus-zoom */
 ::placeholder{color:var(--ink-faint);}
 a,button{transition:background .15s ease, color .15s ease, border-color .15s ease, opacity .15s ease;}
 button{cursor:pointer;}

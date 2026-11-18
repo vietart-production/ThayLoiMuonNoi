@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Đặt một cuộc gọi — Thay Lời Muốn Nói</title>
+<title>Đơn của tôi — Thay Lời Muốn Nói</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎄</text></svg>">
 <script src="https://cdn.tailwindcss.com/3.4.16"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,136 +11,150 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/app.css">
 <link rel="stylesheet" href="assets/ui.css">
+<style>
+  fieldset{border:0; padding:0; margin:0; min-width:0;}
+  legend{font-family:var(--font-display); font-weight:700; font-size:1.08rem; margin-bottom:.7rem;}
+  .hint{font-size:.78rem; color:var(--ink-faint); margin-top:.35rem;}
+  .field{display:block;}
+  .field > span{display:block; font-size:.82rem; font-weight:600; margin-bottom:.35rem;}
+  .field input,.field textarea,.field select{width:100%;}
+  .radio-row{display:flex; align-items:center; gap:.55rem; font-size:.9rem; cursor:pointer; padding:.25rem 0;}
+  .radio-row input{accent-color:var(--gold); width:1rem; height:1rem;}
+  .bill{font-size:.85rem;}
+  .bill div{display:flex; justify-content:space-between; gap:1rem; padding:.3rem 0;}
+  .bill dt{color:var(--ink-dim);}
+  .bill .total{border-top:1px solid var(--line); margin-top:.4rem; padding-top:.7rem; font-size:1rem; font-weight:700;}
+  .order details summary{cursor:pointer; color:var(--ink-dim); font-size:.82rem; margin-top:.75rem;}
+  .quote{white-space:pre-wrap; border-left:3px solid var(--gold); padding:.4rem .9rem; margin-top:.6rem; color:var(--ink); font-size:.9rem; line-height:1.6;}
+  .notice{border-radius:.8rem; padding:.6rem .85rem; font-size:.82rem; margin-top:.85rem; background:rgba(255,255,255,.05); color:var(--ink-dim);}
+  .notice.bad{background:rgba(194,31,43,.15); color:#FBD6D6;}
+  .notice.go{background:rgba(232,180,92,.12); color:var(--gold-bright);}
+  .status-pill.go{background:rgba(232,180,92,.22); border-color:var(--gold);}
+</style>
 </head>
 <body class="antialiased">
 <div class="content-bg">
 
 <header class="navbar sticky top-0 z-50">
-  <nav class="max-w-5xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
+  <nav class="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
     <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói</a>
     <div class="flex items-center gap-3 text-xs sm:order-last">
       <span id="walletBadge" class="status-pill" style="display:none;"></span>
       <div id="userBox" class="flex items-center gap-2"></div>
     </div>
     <div class="nav-links">
-      <a href="dat-don.html" aria-current="page">Đặt một cuộc gọi</a>
+      <a href="nguoi-noi-ho.html">Tìm người nói hộ</a>
+      <a href="dat-don.html" aria-current="page">Đơn của tôi</a>
       <a href="freelancer.html">Trở thành người nói hộ</a>
       <a href="report.html">Báo cáo cuộc gọi</a>
     </div>
   </nav>
 </header>
 
-<main class="max-w-5xl mx-auto px-5 py-10">
-  <h1 class="text-2xl md:text-3xl font-bold display mb-6">Đặt một cuộc gọi</h1>
+<main class="max-w-6xl mx-auto px-5 py-10">
+  <h1 id="pageTitle" class="text-3xl font-bold display mb-6">Đơn của tôi</h1>
 
   <div id="auth"></div>
 
   <div id="app" style="display:none;">
-    <section class="card p-5 mb-8 flex items-end justify-between flex-wrap gap-4">
+    <section class="card p-5 mb-8 flex items-center justify-between flex-wrap gap-4">
       <div>
         <p class="muted text-sm">Số dư ví</p>
         <p id="balanceOut" class="text-2xl font-bold accent">…</p>
       </div>
-      <form id="topupForm" class="flex items-end gap-2 flex-wrap">
-        <div>
-          <label for="topupAmount">Số tiền nạp (đ)</label>
-          <input id="topupAmount" type="number" min="1000" step="1000" class="w-36 mt-1 block" value="50000">
-        </div>
+      <form id="topupForm" class="flex items-center gap-2 flex-wrap">
+        <div id="topupPresets" class="flex flex-wrap gap-2" role="group" aria-label="Số tiền nạp"></div>
         <button class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Nạp tiền qua payOS</button>
       </form>
     </section>
 
-    <section class="mb-8">
-      <h2 class="font-bold text-lg mb-3">1. Chọn người nói hộ</h2>
-      <div class="flex flex-wrap gap-2 mb-4">
-        <input id="fSearch" type="text" placeholder="Tìm theo tên, giọng, loại số…" class="flex-1 min-w-[12rem]">
-        <select id="fCarrier" aria-label="Lọc theo nhà mạng">
-          <option value="">Mọi nhà mạng</option>
-          <option>Viettel</option><option>Mobifone</option><option>Vinaphone</option><option>Vietnamobile</option>
-        </select>
-        <select id="fRating" aria-label="Lọc theo đánh giá tối thiểu">
-          <option value="0">Mọi đánh giá</option>
-          <option value="4">Từ 4 ★</option>
-          <option value="4.5">Từ 4.5 ★</option>
-        </select>
-        <select id="fSort" aria-label="Sắp xếp">
-          <option value="rating">Đánh giá cao nhất</option>
-          <option value="price">Giá thấp nhất</option>
-        </select>
+    <!-- New order: only when a freelancer was picked (?f=<public id>). -->
+    <section id="checkout" class="mb-10" hidden>
+      <div class="grid lg:grid-cols-[minmax(0,1fr)_20rem] gap-6 items-start">
+        <form id="orderForm" class="card p-6 space-y-8" novalidate>
+          <div id="picked"></div>
+
+          <fieldset>
+            <legend>Gọi cho ai</legend>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <label class="field"><span>Tên người ấy <span class="faint font-normal">(không bắt buộc)</span></span>
+                <input id="calleeName" type="text" maxlength="60" placeholder="Để người nói hộ hỏi đúng người"></label>
+              <label class="field"><span>Số điện thoại người ấy</span>
+                <input id="calleePhone" type="tel" inputmode="numeric" maxlength="20" placeholder="0901234567 hoặc +84901234567"></label>
+            </div>
+            <p class="hint">Người nói hộ chỉ thấy số này sau khi lời nhắn được duyệt, và không còn thấy nữa khi cuộc gọi đã xong.</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Dịp gì</legend>
+            <div id="occasions" class="flex flex-wrap gap-2"></div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Khi nào gọi</legend>
+            <label class="radio-row"><input type="radio" name="when" value="asap" checked> Càng sớm càng tốt</label>
+            <label class="radio-row"><input type="radio" name="when" value="at"> Vào một thời điểm cụ thể</label>
+            <input id="scheduledAt" type="datetime-local" class="mt-2 w-full sm:w-auto" hidden>
+            <p class="hint">Ví dụ đúng 0 giờ đêm Giáng sinh, hay đúng giờ sinh nhật. Chọn "Đặc biệt" ở phần cách nói nếu là khung giờ như vậy.</p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Lời nhắn</legend>
+            <label class="field"><span>Điều người nói hộ sẽ nói với người ấy</span>
+              <textarea id="script" rows="6" maxlength="2000" placeholder="Viết đúng như bạn muốn người ấy được nghe…"></textarea></label>
+            <p class="hint flex justify-between gap-3"><span>Người nói hộ đọc gần như nguyên văn. Lời nhắn được CSKH duyệt trước khi gọi.</span><span id="charsOut" class="whitespace-nowrap">0/2000</span></p>
+            <label class="field mt-4"><span>Ghi chú riêng cho người nói hộ <span class="faint font-normal">(không đọc lên)</span></span>
+              <textarea id="note" rows="2" maxlength="500" placeholder="Cách xưng hô, cách đọc tên, nên nói chậm ở đoạn nào…"></textarea></label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Cách nói</legend>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <label class="field"><span>Thời lượng</span>
+                <select id="duration"><option value="1">Dưới 2 phút</option><option value="1.3" selected>2–5 phút</option><option value="1.6">Trên 5 phút</option></select></label>
+              <label class="field"><span>Tốc độ</span>
+                <select id="speed"><option value="1.1">Chậm và rõ</option><option value="1" selected>Bình thường</option><option value="1.15">Nhanh</option></select></label>
+              <label class="field"><span>Cảm xúc</span>
+                <select id="emotion"><option value="0" selected>Nhẹ nhàng</option><option value="0.1">Vui vẻ</option><option value="0.2">Xúc động</option></select></label>
+              <label class="field"><span>Khung giờ</span>
+                <select id="timing"><option value="0" selected>Giờ thường</option><option value="0.15">Tối muộn</option><option value="0.3">Đặc biệt</option></select></label>
+            </div>
+          </fieldset>
+        </form>
+
+        <aside class="card p-6 lg:sticky lg:top-24">
+          <h2 class="font-bold text-lg">Tạm tính</h2>
+          <dl id="bill" class="bill mt-3"></dl>
+          <p id="shortfall" class="notice bad" hidden></p>
+          <button id="submitOrder" type="submit" form="orderForm" class="btn-primary w-full rounded-full px-6 py-3 font-semibold mt-5">Đặt đơn và giữ tiền tạm</button>
+          <ul class="mt-4 space-y-1.5 text-xs muted">
+            <li>Tiền chỉ chuyển cho người nói hộ sau khi bạn xác nhận.</li>
+            <li>Huỷ miễn phí, hoàn tiền ngay, khi lời nhắn chưa được duyệt.</li>
+            <li>Lời nhắn vi phạm sẽ bị từ chối và hoàn tiền.</li>
+          </ul>
+        </aside>
       </div>
-      <div id="freelancerList" class="grid sm:grid-cols-2 md:grid-cols-4 gap-4"><p class="faint text-sm">Đang tải…</p></div>
     </section>
 
-    <section class="card p-5 mb-8">
-      <h2 class="font-bold text-lg mb-1">2. Viết lời nhắn và tính giá</h2>
-      <p id="selectedFreelancerNote" class="faint text-sm mb-3">Chưa chọn người nói hộ ở bước 1.</p>
-      <label for="calleePhone">Số điện thoại của người ấy</label>
-      <input id="calleePhone" type="tel" inputmode="numeric" maxlength="20" class="w-full mt-1 mb-4" placeholder="0901234567 hoặc +84901234567">
-      <label for="script">Lời bạn muốn gửi</label>
-      <textarea id="script" rows="4" maxlength="2000" class="w-full mt-1 mb-4" placeholder="Viết đúng điều bạn muốn người nói hộ nói với người ấy…"></textarea>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div>
-          <label for="duration">Thời lượng gọi</label>
-          <select id="duration" class="w-full mt-1">
-            <option value="1">Dưới 2 phút</option>
-            <option value="1.3" selected>2–5 phút</option>
-            <option value="1.6">Trên 5 phút</option>
-          </select>
-        </div>
-        <div>
-          <label for="speed">Tốc độ nói</label>
-          <select id="speed" class="w-full mt-1">
-            <option value="1.1">Chậm & rõ</option>
-            <option value="1" selected>Bình thường</option>
-            <option value="1.15">Nhanh</option>
-          </select>
-        </div>
-        <div>
-          <label for="emotion">Cảm xúc</label>
-          <select id="emotion" class="w-full mt-1">
-            <option value="0" selected>Nhẹ nhàng</option>
-            <option value="0.1">Vui vẻ</option>
-            <option value="0.2">Xúc động</option>
-          </select>
-        </div>
-        <div>
-          <label for="timing">Giờ gọi</label>
-          <select id="timing" class="w-full mt-1">
-            <option value="0" selected>Giờ thường</option>
-            <option value="0.15">Tối muộn</option>
-            <option value="0.3">Đặc biệt</option>
-          </select>
-        </div>
+    <section id="newOrderPrompt" class="card p-5 mb-10 flex flex-wrap items-center justify-between gap-4" hidden>
+      <div>
+        <p class="font-semibold">Muốn gửi một cuộc gọi mới?</p>
+        <p class="faint text-sm">Nghe thử giọng, xem đánh giá rồi chọn người nói hộ.</p>
       </div>
-      <div class="flex items-center justify-between flex-wrap gap-3 pt-4 border-t" style="border-color:var(--line);">
-        <div>
-          <p class="muted text-sm">Chi phí <span class="faint text-xs">(<span id="charsOut">0</span> chữ)</span></p>
-          <p id="priceOut" class="text-2xl font-bold accent">0đ</p>
-        </div>
-        <button id="submitOrder" class="btn-primary rounded-full px-7 py-3 text-sm font-semibold">Đặt đơn và giữ tiền tạm</button>
-      </div>
-      <p class="faint text-xs mt-3">Tiền được giữ tạm, chỉ chuyển cho người nói hộ sau khi bạn xác nhận. Lời nhắn được kiểm duyệt trước khi gọi.</p>
+      <a href="nguoi-noi-ho.html" class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold">Tìm người nói hộ</a>
     </section>
 
-    <section>
-      <h2 class="font-bold text-lg mb-3">Đơn của tôi</h2>
-      <div id="myOrders" class="space-y-3"><p class="faint text-sm">Đang tải…</p></div>
+    <section id="orders">
+      <h2 class="font-bold text-xl display mb-3">Đơn đã đặt</h2>
+      <div class="tabs" role="tablist" id="orderTabs">
+        <button role="tab" data-tab="active">Đang xử lý<span class="count" data-count="active"></span></button>
+        <button role="tab" data-tab="done">Hoàn thành<span class="count" data-count="done"></span></button>
+        <button role="tab" data-tab="ended">Đã huỷ, hoàn tiền<span class="count" data-count="ended"></span></button>
+      </div>
+      <div id="orderList" class="space-y-3 mt-4"><div class="skeleton" style="min-height:8rem;"></div></div>
     </section>
   </div>
 </main>
-
-<dialog id="disputeDlg" class="p-5 w-[min(92vw,26rem)]">
-  <form method="dialog">
-    <h3 class="font-bold text-lg mb-1">Báo tranh chấp</h3>
-    <p class="faint text-xs mb-3">Tiền vẫn được giữ tạm cho tới khi CSKH xử lý xong.</p>
-    <label for="disputeReason">Điều gì chưa đúng với cuộc gọi này?</label>
-    <textarea id="disputeReason" rows="3" maxlength="500" class="w-full mt-1 mb-4" required></textarea>
-    <div class="flex justify-end gap-2">
-      <button value="cancel" formnovalidate class="btn-dark rounded-full px-4 py-2 text-sm font-semibold">Huỷ</button>
-      <button value="ok" class="btn-primary rounded-full px-4 py-2 text-sm font-semibold">Gửi tranh chấp</button>
-    </div>
-  </form>
-</dialog>
 
 <footer class="border-t py-8 px-5 text-center text-xs" style="border-color:var(--line); color:var(--ink-faint);">
   <div class="mb-2" style="font-size:16px; opacity:.7;">🎄</div>
@@ -152,138 +166,41 @@
 <script type="module">
   import { mountAuthWidget, toE164, toLocalPhone } from './assets/firebase-client.js';
   import { api } from './assets/api-client.js';
-  import { esc, toast, guard, STATUS_TONE, initials } from './assets/ui.js';
+  import { esc, toast, guard, ask, initials } from './assets/ui.js';
+  import { OCCASIONS, vnd, dateTime, voiceLine, voiceButton, wireVoiceButtons, statusPill, orderSteps } from './assets/catalog.js';
 
   const $ = (id) => document.getElementById(id);
-  const vnd = (n) => n.toLocaleString('vi-VN') + 'đ';
-  const STATUS_LABEL = {
-    cho_duyet_kich_ban: 'Đang chờ duyệt lời nhắn',
-    kich_ban_bi_tu_choi: 'Lời nhắn bị từ chối, đã hoàn tiền',
-    da_duyet_cho_goi: 'Đã duyệt, chờ người nói hộ gọi',
-    cho_xac_nhan: 'Đã gọi, chờ bạn xác nhận',
-    da_dong: 'Đã hoàn thành',
-    tranh_chap: 'Đang tranh chấp, chờ CSKH',
-    da_hoan_tien: 'Đã hoàn tiền',
-  };
-  // Local mirror of the server's pricing formula (src/db.js calcPrice) — for live preview
-  // only. The server recomputes the real price itself from the raw inputs; it never
-  // trusts a price the client sends.
-  function previewPrice({ chars, duration, speed, emotion, timing }, multiplier = 1) {
-    const base = Math.ceil(chars / 20) * 1000;
-    return Math.round((base * duration * speed * (1 + emotion + timing) * multiplier) / 500) * 500;
-  }
+  const params = new URLSearchParams(location.search);
+  const pickedId = params.get('f');
+  let picked = null;   // the freelancer being ordered from, when ?f= is set
+  let balance = 0;
+  let orders = [];
+  let tab = null;
 
-  let freelancers = [];
-  let selectedFreelancerPhone = new URLSearchParams(location.search).get('f') || null;
+  // ---- static bits ----
+  const PRESETS = [20000, 50000, 100000, 200000];
+  $('topupPresets').innerHTML = PRESETS.map((a, i) =>
+    `<label class="chip"><input type="radio" name="topup" value="${a}" ${i === 1 ? 'checked' : ''}><span>${vnd(a)}</span></label>`).join('');
+  $('occasions').innerHTML = OCCASIONS.map((o) =>
+    `<label class="chip"><input type="radio" name="occasion" value="${esc(o)}"><span>${esc(o)}</span></label>`).join('');
 
   mountAuthWidget({ gate: $('auth'), onLogin: async () => {
     $('app').style.display = 'block';
-    try { await renderAll(); } catch (e) { toast(e.message, true); }
+    try {
+      await Promise.all([renderWallet(), pickedId ? loadPicked() : showPrompt()]);
+      await renderOrders();
+    } catch (e) { toast(e.message, true); }
   } });
 
-  async function renderAll() {
-    await renderWallet();
-    await renderFreelancers();
-    await renderOrders();
-  }
-
   async function renderWallet() {
-    const { balance } = await api.wallet.get();
+    ({ balance } = await api.wallet.get());
     $('balanceOut').textContent = vnd(balance);
     $('walletBadge').style.display = 'inline-flex';
     $('walletBadge').textContent = 'Ví: ' + vnd(balance);
+    recalc();
   }
 
-  async function renderFreelancers() {
-    freelancers = await api.freelancers.list();
-    drawFreelancers();
-  }
-
-  // Filtered client-side: the list is already fetched in full and small (a marketplace
-  // of freelancers, not orders), so a second endpoint just for filtering would be work
-  // for no benefit.
-  function filteredFreelancers() {
-    const q = $('fSearch').value.trim().toLowerCase();
-    const carrier = $('fCarrier').value;
-    const minRating = Number($('fRating').value);
-    const sort = $('fSort').value;
-    let list = freelancers.filter((f) =>
-      (!q || [f.name, f.voiceType, f.numberType, f.voiceNote].some((s) => (s || '').toLowerCase().includes(q))) &&
-      (!carrier || f.carrier === carrier) &&
-      (f.rating || 0) >= minRating
-    );
-    list = sort === 'price'
-      ? list.slice().sort((a, b) => a.priceMultiplier - b.priceMultiplier)
-      : list.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.ratingCount || 0) - (a.ratingCount || 0));
-    return list;
-  }
-  ['fSearch', 'fCarrier', 'fRating', 'fSort'].forEach((id) => $(id).addEventListener('input', drawFreelancers));
-
-  function drawFreelancers() {
-    if (!freelancers.length) {
-      $('freelancerList').innerHTML = '<p class="faint text-sm sm:col-span-2 md:col-span-4">Chưa có người nói hộ nào đăng ký. Muốn thử? <a class="underline accent" href="freelancer.html">Tạo hồ sơ người nói hộ</a>.</p>';
-      return;
-    }
-    const visible = filteredFreelancers();
-    if (!visible.length) {
-      $('freelancerList').innerHTML = '<p class="faint text-sm sm:col-span-2 md:col-span-4">Không có người nói hộ nào khớp bộ lọc. Thử nới bớt tiêu chí.</p>';
-      return;
-    }
-    $('freelancerList').innerHTML = visible.map((f) => {
-      const selected = f.phone === selectedFreelancerPhone;
-      return `
-      <div class="card p-4 flex flex-col ${selected ? 'selected' : ''}">
-        <div class="flex items-center gap-3">
-          <div class="avatar">${esc(initials(f.name))}</div>
-          <div class="min-w-0">
-            <h3 class="font-bold truncate">${esc(f.name)}</h3>
-            <p class="faint text-xs truncate">${esc(f.voiceType)}</p>
-          </div>
-        </div>
-        <div class="mt-3 flex flex-wrap gap-1.5">
-          <span class="pill-pine">${esc(f.numberType)}</span>
-          <span class="pill-neutral">${esc(f.carrier)}</span>
-        </div>
-        <p class="mt-3 text-sm"><span class="star">★</span> <span class="faint">${f.ratingCount ? `${f.rating} (${f.ratingCount} đơn)` : 'Chưa có đánh giá'}</span></p>
-        <p class="faint text-xs mt-0.5 mb-3">Hệ số giá ×${f.priceMultiplier}</p>
-        <button data-phone="${esc(f.phone)}" aria-pressed="${selected}" class="choose-freelancer mt-auto w-full ${selected ? 'btn-gold' : 'btn-outline'} rounded-full py-2 text-sm font-semibold">
-          ${selected ? '✓ Đã chọn' : 'Chọn người này'}
-        </button>
-      </div>`;
-    }).join('');
-    document.querySelectorAll('.choose-freelancer').forEach((btn) => {
-      btn.onclick = () => {
-        selectedFreelancerPhone = btn.dataset.phone;
-        drawFreelancers();
-        recalc();
-      };
-    });
-    const f = getSelectedFreelancer();
-    $('selectedFreelancerNote').textContent = f ? `Đang đặt cho ${f.name} (hệ số giá ×${f.priceMultiplier}).` : 'Chưa chọn người nói hộ ở bước 1.';
-  }
-
-  function getSelectedFreelancer() {
-    return selectedFreelancerPhone ? freelancers.find((f) => f.phone === selectedFreelancerPhone) : null;
-  }
-
-  function recalc() {
-    const chars = $('script').value.trim().length;
-    $('charsOut').textContent = chars;
-    const f = getSelectedFreelancer();
-    const price = chars ? previewPrice({
-      chars,
-      duration: Number($('duration').value),
-      speed: Number($('speed').value),
-      emotion: Number($('emotion').value),
-      timing: Number($('timing').value),
-    }, f ? f.priceMultiplier : 1) : 0;
-    $('priceOut').textContent = vnd(price);
-  }
-  ['script', 'duration', 'speed', 'emotion', 'timing'].forEach((id) => $(id).addEventListener('input', recalc));
-
-  $('topupForm').addEventListener('submit', guard(async () => {
-    const amount = Number($('topupAmount').value) || 0;
-    if (amount <= 0) throw new Error('Nhập số tiền muốn nạp.');
+  async function topup(amount) {
     const result = await api.wallet.topupLink(amount);
     if (result.simulated) {
       // TEMPORARY (DECISIONS.md §13): backend already credited the wallet without
@@ -295,111 +212,285 @@
     } else {
       location.href = result.checkoutUrl; // payOS hosted checkout; returns to ?topup=done on this page
     }
+  }
+  $('topupForm').addEventListener('submit', guard(async () => {
+    const choice = document.querySelector('input[name="topup"]:checked');
+    await topup(Number(choice ? choice.value : 0));
   }));
-  if (new URLSearchParams(location.search).get('topup')) {
+  if (params.get('topup')) {
     // Webhook may take a few seconds to land — the user is back on the page before it does.
     setTimeout(() => renderWallet().catch(() => {}), 3000);
   }
 
-  $('submitOrder').onclick = guard(async () => {
-    if (!getSelectedFreelancer()) throw new Error('Chọn một người nói hộ ở bước 1 trước.');
+  function showPrompt() {
+    $('newOrderPrompt').hidden = false;
+  }
+
+  // ---- checkout ----
+  async function loadPicked() {
+    $('pageTitle').textContent = 'Đặt cuộc gọi';
+    document.title = 'Đặt cuộc gọi — Thay Lời Muốn Nói';
+    try {
+      picked = await api.freelancers.get(pickedId);
+    } catch (e) {
+      $('newOrderPrompt').hidden = false;
+      toast('Không tìm thấy người nói hộ đã chọn. Hãy chọn lại.', true);
+      return;
+    }
+    if (!picked.accepting) {
+      $('newOrderPrompt').hidden = false;
+      toast(`${picked.name} đang tạm nghỉ, chưa nhận đơn mới.`, true);
+      return;
+    }
+    $('checkout').hidden = false;
+    $('picked').innerHTML = `
+      <div class="flex items-center gap-4 flex-wrap rounded-2xl p-4" style="background:rgba(232,180,92,.08); border:1px solid rgba(232,180,92,.3);">
+        <div class="fc-avatar" aria-hidden="true">${esc(initials(picked.name))}</div>
+        <div style="flex:1 1 10rem; min-width:0;">
+          <p class="faint text-xs">Người nói hộ</p>
+          <p class="font-bold text-lg display leading-tight">${esc(picked.name)}</p>
+          <p class="faint text-xs">${esc(voiceLine(picked))}${picked.ratingCount ? ` · ★ ${picked.rating.toFixed(1)} (${picked.ratingCount})` : ''}</p>
+        </div>
+        ${picked.hasVoiceDemo ? voiceButton(picked.id) : ''}
+        <a href="nguoi-noi-ho.html" class="text-sm accent underline">Đổi người khác</a>
+      </div>`;
+    wireVoiceButtons($('picked'));
+    restoreDraft();
+    recalc();
+  }
+
+  // Local mirror of src/db.js calcPrice, for the live estimate only — the server
+  // recomputes the price from the script itself and never trusts a client figure.
+  function estimate() {
+    const chars = $('script').value.trim().length;
+    const base = Math.ceil(chars / 20) * 1000;
+    const factor = Number($('duration').value) * Number($('speed').value) * (1 + Number($('emotion').value) + Number($('timing').value));
+    const mult = picked ? picked.priceMultiplier : 1;
+    return { chars, base, factor, mult, total: chars ? Math.round((base * factor * mult) / 500) * 500 : 0 };
+  }
+
+  const times = (n) => '×' + n.toLocaleString('vi-VN', { maximumFractionDigits: 3 });
+  function recalc() {
+    if (!picked) return;
+    const e = estimate();
+    $('charsOut').textContent = `${e.chars}/2000`;
+    $('bill').innerHTML = e.chars
+      ? `<div><dt>Lời nhắn ${e.chars} chữ</dt><dd>${vnd(e.base)}</dd></div>
+         <div><dt>Thời lượng, tốc độ, cảm xúc, khung giờ</dt><dd>${times(e.factor)}</dd></div>
+         <div><dt>Hệ số của ${esc(picked.name)}</dt><dd>${times(e.mult)}</dd></div>
+         <div class="total"><dt>Tổng</dt><dd class="accent">${vnd(e.total)}</dd></div>`
+      : '<p class="faint">Viết lời nhắn để xem giá. Cứ 20 chữ là 1.000đ, nhân với các tuỳ chọn bên dưới.</p>';
+    const missing = e.total - balance;
+    $('shortfall').hidden = !(e.chars && missing > 0);
+    if (missing > 0) {
+      const amount = Math.max(10000, Math.ceil(missing / 10000) * 10000);
+      $('shortfall').innerHTML = `Ví còn thiếu ${vnd(missing)}. <button type="button" class="underline font-semibold" id="quickTopup">Nạp ${vnd(amount)}</button>`;
+      $('quickTopup').onclick = guard(async function () { await topup(amount); });
+    }
+  }
+
+  // Draft kept in this browser so picking a different freelancer, or leaving to top up,
+  // doesn't throw away a half-written message. Storage can be unavailable (private mode),
+  // in which case drafts just aren't kept.
+  const DRAFT_KEY = 'tlmn-draft';
+  const DRAFT_FIELDS = ['calleeName', 'calleePhone', 'script', 'note'];
+  function saveDraft() {
+    try {
+      const d = Object.fromEntries(DRAFT_FIELDS.map((k) => [k, $(k).value]));
+      d.occasion = (document.querySelector('input[name="occasion"]:checked') || {}).value || '';
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+    } catch (e) { /* drafts are a convenience */ }
+  }
+  function restoreDraft() {
+    try {
+      const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}');
+      DRAFT_FIELDS.forEach((k) => { if (d[k]) $(k).value = d[k]; });
+      document.querySelectorAll('input[name="occasion"]').forEach((i) => { i.checked = i.value === d.occasion; });
+    } catch (e) { /* ignore a corrupt or unreadable draft */ }
+  }
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* ignore */ } }
+
+  $('orderForm').addEventListener('input', () => { recalc(); saveDraft(); });
+  document.querySelectorAll('input[name="when"]').forEach((r) => r.addEventListener('change', () => {
+    const at = document.querySelector('input[name="when"]:checked').value === 'at';
+    $('scheduledAt').hidden = !at;
+    if (at) {
+      const d = new Date(Date.now() + 60 * 60 * 1000);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      $('scheduledAt').min = d.toISOString().slice(0, 16);
+      $('scheduledAt').focus();
+    }
+  }));
+
+  $('orderForm').addEventListener('submit', guard(async () => {
     const calleePhone = toE164($('calleePhone').value);
-    if (!calleePhone) throw new Error('Nhập đúng số điện thoại của người sẽ nhận cuộc gọi.');
+    if (!calleePhone) { $('calleePhone').focus(); throw new Error('Nhập đúng số điện thoại của người sẽ nhận cuộc gọi.'); }
     const script = $('script').value.trim();
-    if (!script) throw new Error('Viết lời bạn muốn gửi trước khi đặt đơn.');
+    if (!script) { $('script').focus(); throw new Error('Viết lời bạn muốn gửi trước khi đặt đơn.'); }
+    let scheduledAt = null;
+    if (document.querySelector('input[name="when"]:checked').value === 'at') {
+      scheduledAt = $('scheduledAt').value ? new Date($('scheduledAt').value).getTime() : NaN;
+      if (!(scheduledAt > Date.now())) { $('scheduledAt').focus(); throw new Error('Chọn một thời điểm gọi trong tương lai.'); }
+    }
+    const { total } = estimate();
+    if (total > balance) throw new Error(`Ví còn thiếu ${vnd(total - balance)}, hãy nạp thêm trước.`);
     await api.orders.create({
-      freelancerPhone: selectedFreelancerPhone,
+      freelancerId: picked.id,
       calleePhone,
+      calleeName: $('calleeName').value.trim(),
+      occasion: (document.querySelector('input[name="occasion"]:checked') || {}).value || '',
+      scheduledAt,
+      note: $('note').value.trim(),
       script,
-      chars: script.length,
       duration: Number($('duration').value),
       speed: Number($('speed').value),
       emotion: Number($('emotion').value),
       timing: Number($('timing').value),
     });
-    $('calleePhone').value = '';
-    $('script').value = '';
-    recalc();
+    clearDraft();
+    $('orderForm').reset();
+    $('scheduledAt').hidden = true;
     await renderWallet();
+    tab = 'active';
     await renderOrders();
     toast('Đã đặt đơn. Tiền được giữ tạm, lời nhắn đang chờ duyệt.');
-    $('myOrders').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+    $('orders').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+
+  // ---- my orders ----
+  const GROUP = {
+    active: ['cho_duyet_kich_ban', 'da_duyet_cho_goi', 'cho_xac_nhan', 'tranh_chap'],
+    done: ['da_dong'],
+    ended: ['kich_ban_bi_tu_choi', 'da_hoan_tien', 'da_huy'],
+  };
+  const groupOf = (o) => Object.keys(GROUP).find((g) => GROUP[g].includes(o.status)) || 'active';
+
+  document.querySelectorAll('#orderTabs [data-tab]').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab; drawOrders(); }));
 
   async function renderOrders() {
-    const orders = await api.orders.mine();
-    if (!orders.length) {
-      $('myOrders').innerHTML = '<p class="faint text-sm">Chưa có đơn nào. Chọn người nói hộ ở trên để đặt đơn đầu tiên.</p>';
-      return;
-    }
-    $('myOrders').innerHTML = orders.map((o) => {
-      const f = freelancers.find((x) => x.phone === o.freelancerPhone);
-      let actions = '';
-      if (o.status === 'cho_xac_nhan') {
-        actions = `
-          <div class="mt-3 flex flex-wrap gap-2 items-center">
-            <select class="confirm-method text-sm" data-id="${o.id}" aria-label="Cách bạn kiểm tra cuộc gọi">
-              <option value="buyer_confirm">Tôi xác nhận đã đạt mục đích</option>
-              <option value="buyer_present">Tôi có mặt nghe lúc gọi</option>
-              <option value="buyer_followup">Tôi đã hỏi lại người được gọi</option>
-            </select>
-            <button class="confirm-order btn-primary rounded-full px-4 py-2 text-sm font-semibold" data-id="${o.id}">Xác nhận và trả tiền</button>
-            <button class="dispute-order btn-outline rounded-full px-4 py-2 text-sm font-semibold" data-id="${o.id}">Báo tranh chấp</button>
-          </div>`;
-      } else if (o.status === 'da_dong' && o.rating == null) {
-        actions = `
-          <div class="mt-3 flex items-center rate-order">
-            ${[1, 2, 3, 4, 5].map((s) => `<button class="rate-star" data-id="${o.id}" data-stars="${s}" aria-label="Chấm ${s} sao">★</button>`).join('')}
-            <span class="faint text-xs ml-2">Chấm điểm người nói hộ</span>
-          </div>`;
-      } else if (o.status === 'da_dong') {
-        actions = `<p class="faint text-xs mt-2">Bạn đã chấm ${o.rating} <span class="star">★</span></p>`;
-      }
-      return `
-        <div class="card p-4">
-          <div class="flex justify-between items-start gap-3 flex-wrap">
-            <div class="min-w-0">
-              <p class="font-semibold text-sm">${esc(f ? f.name : o.freelancerPhone)} · ${vnd(o.price)}</p>
-              <p class="faint text-xs mt-0.5">Gọi tới ${esc(toLocalPhone(o.calleePhone))} · ${new Date(o.createdAt).toLocaleString('vi-VN')}</p>
-            </div>
-            <span class="status-pill ${STATUS_TONE[o.status] || ''}">${STATUS_LABEL[o.status] || o.status}</span>
-          </div>
-          <p class="muted text-sm mt-2">“${esc(o.script.slice(0, 120))}${o.script.length > 120 ? '…' : ''}”</p>
-          ${actions}
-        </div>`;
-    }).join('');
-
-    document.querySelectorAll('.confirm-order').forEach((btn) => {
-      btn.onclick = guard(async () => {
-        const method = document.querySelector(`.confirm-method[data-id="${btn.dataset.id}"]`).value;
-        await api.orders.confirm(btn.dataset.id, method);
-        await renderOrders();
-        toast('Đã xác nhận. Tiền đã chuyển cho người nói hộ.');
-      });
-    });
-    document.querySelectorAll('.dispute-order').forEach((btn) => {
-      btn.onclick = () => {
-        const dlg = $('disputeDlg');
-        dlg.dataset.id = btn.dataset.id;
-        dlg.returnValue = '';
-        $('disputeReason').value = '';
-        dlg.showModal();
-      };
-    });
-    document.querySelectorAll('.rate-star').forEach((btn) => {
-      btn.onclick = guard(async () => {
-        await api.orders.rate(btn.dataset.id, Number(btn.dataset.stars));
-        await renderOrders();
-      });
-    });
+    orders = await api.orders.mine();
+    if (!tab) tab = orders.some((o) => groupOf(o) === 'active') ? 'active' : orders.some((o) => groupOf(o) === 'done') ? 'done' : 'active';
+    drawOrders();
   }
 
-  $('disputeDlg').onclose = guard(async function () {
-    if (this.returnValue !== 'ok') return;
-    await api.orders.dispute(this.dataset.id, $('disputeReason').value.trim());
+  function orderNotice(o) {
+    if (o.status === 'kich_ban_bi_tu_choi') {
+      return `<p class="notice bad">Lời nhắn không được duyệt${o.bannedFlags && o.bannedFlags.length ? `: ${esc(o.bannedFlags.join(', '))}` : ''}. Tiền đã hoàn về ví.</p>`;
+    }
+    if (o.status === 'da_huy') {
+      const who = o.cancelledBy === 'freelancer' ? 'Người nói hộ đã từ chối đơn' : 'Bạn đã huỷ đơn';
+      return `<p class="notice">${who}${o.cancelReason ? `: “${esc(o.cancelReason)}”` : ''}. Tiền đã hoàn về ví.</p>`;
+    }
+    if (o.status === 'cho_xac_nhan') {
+      return `<p class="notice go">Người nói hộ báo đã gọi${o.calledAt ? ` lúc ${esc(dateTime(o.calledAt))}` : ''}${o.hasRecording ? ', có ghi âm' : ', không ghi âm được'}. Hãy xác nhận nếu cuộc gọi đã diễn ra như bạn muốn. Không phản hồi trong 48 giờ thì đơn tự xác nhận.</p>`;
+    }
+    if (o.status === 'tranh_chap') return `<p class="notice bad">Bạn đã báo tranh chấp: “${esc(o.disputeReason || '')}”. CSKH đang xem xét, tiền vẫn được giữ.</p>`;
+    if (o.status === 'da_hoan_tien') return '<p class="notice">CSKH đã xử lý tranh chấp theo hướng hoàn tiền cho bạn.</p>';
+    return '';
+  }
+
+  function orderActions(o) {
+    const again = o.freelancerId && ['done', 'ended'].includes(groupOf(o))
+      ? `<a href="dat-don.html?f=${encodeURIComponent(o.freelancerId)}" class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Đặt lại với ${esc(o.freelancerName)}</a>` : '';
+    if (o.status === 'cho_duyet_kich_ban') {
+      return `<button class="btn-dark rounded-full px-4 py-2 text-sm font-semibold" data-act="cancel" data-id="${o.id}">Huỷ đơn</button>`;
+    }
+    if (o.status === 'cho_xac_nhan') {
+      return `
+        <select class="text-sm" data-method="${o.id}" aria-label="Bạn biết cuộc gọi đã diễn ra bằng cách nào">
+          <option value="buyer_confirm">Tôi xác nhận đã đạt mục đích</option>
+          <option value="buyer_present">Tôi có mặt nghe lúc gọi</option>
+          <option value="buyer_followup">Tôi đã hỏi lại người được gọi</option>
+        </select>
+        <button class="btn-primary rounded-full px-4 py-2 text-sm font-semibold" data-act="confirm" data-id="${o.id}">Xác nhận và trả tiền</button>
+        <button class="btn-outline rounded-full px-4 py-2 text-sm font-semibold" data-act="dispute" data-id="${o.id}">Báo tranh chấp</button>`;
+    }
+    if (o.status === 'da_dong' && o.rating == null) {
+      return `<button class="btn-primary rounded-full px-4 py-2 text-sm font-semibold" data-act="rate" data-id="${o.id}">Đánh giá ${esc(o.freelancerName)}</button>${again}`;
+    }
+    if (o.status === 'da_dong') {
+      return `<p class="text-sm"><span class="star">${'★'.repeat(o.rating)}</span>${o.reviewComment ? ` <span class="muted">“${esc(o.reviewComment)}”</span>` : ''}</p>${again}`;
+    }
+    return again;
+  }
+
+  function drawOrders() {
+    document.querySelectorAll('#orderTabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+    for (const g of Object.keys(GROUP)) {
+      const n = orders.filter((o) => groupOf(o) === g).length;
+      document.querySelector(`[data-count="${g}"]`).textContent = n || '';
+      document.querySelector(`[data-count="${g}"]`).hidden = !n;
+    }
+    const list = orders.filter((o) => groupOf(o) === tab);
+    if (!list.length) {
+      $('orderList').innerHTML = orders.length
+        ? '<div class="empty">Không có đơn nào ở mục này.</div>'
+        : '<div class="empty"><strong>Chưa có đơn nào</strong>Chọn một người nói hộ để gửi cuộc gọi đầu tiên. <a class="accent underline" href="nguoi-noi-ho.html">Tìm người nói hộ</a></div>';
+      return;
+    }
+    $('orderList').innerHTML = list.map((o) => {
+      const to = [o.calleeName, o.calleePhone ? toLocalPhone(o.calleePhone) : ''].filter(Boolean).join(', ');
+      const when = o.scheduledAt ? `Gọi lúc ${dateTime(o.scheduledAt)}` : 'Gọi sớm nhất có thể';
+      const actions = orderActions(o);
+      return `
+      <article class="card p-5 order">
+        <div class="flex justify-between items-start gap-3 flex-wrap">
+          <div class="min-w-0">
+            <p class="font-semibold">${esc(o.freelancerName)}${o.occasion ? ` <span class="faint font-normal">· ${esc(o.occasion)}</span>` : ''}</p>
+            <p class="faint text-xs mt-0.5">${to ? `Gọi cho ${esc(to)} · ` : ''}${esc(when)}</p>
+          </div>
+          <div class="text-right">
+            ${statusPill(o.status, 'buyer')}
+            <p class="font-bold accent mt-1">${vnd(o.price)}</p>
+          </div>
+        </div>
+        ${orderSteps(o.status)}
+        ${orderNotice(o)}
+        <details>
+          <summary>Lời nhắn và chi tiết đơn</summary>
+          <p class="quote">${esc(o.script)}</p>
+          ${o.note ? `<p class="text-sm mt-2"><span class="faint">Ghi chú cho người nói hộ:</span> ${esc(o.note)}</p>` : ''}
+          <p class="faint text-xs mt-2">Đặt lúc ${esc(dateTime(o.createdAt))} · Mã đơn ${esc(o.id.slice(-6))}</p>
+        </details>
+        ${actions ? `<div class="mt-4 flex flex-wrap items-center gap-2">${actions}</div>` : ''}
+      </article>`;
+    }).join('');
+  }
+
+  // One delegated handler for every order action.
+  $('orderList').addEventListener('click', guard(async function (e) {
+    const btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    const { act, id } = btn.dataset;
+    const o = orders.find((x) => x.id === id);
+    if (act === 'cancel') {
+      const r = await ask({ title: 'Huỷ đơn này?', message: `Lời nhắn chưa được duyệt nên ${vnd(o.price)} sẽ hoàn về ví ngay.`, confirm: 'Huỷ đơn', danger: true,
+        field: { label: 'Lý do (không bắt buộc)', maxlength: 300 } });
+      if (!r) return;
+      await api.orders.cancel(id, r.value);
+      toast('Đã huỷ đơn, tiền đã hoàn về ví.');
+      await renderWallet();
+    } else if (act === 'confirm') {
+      const method = document.querySelector(`[data-method="${id}"]`).value;
+      const r = await ask({ title: 'Xác nhận cuộc gọi đã diễn ra?', message: `${vnd(o.price)} sẽ được chuyển cho ${o.freelancerName}. Sau bước này không báo tranh chấp được nữa.`, confirm: 'Xác nhận và trả tiền' });
+      if (!r) return;
+      await api.orders.confirm(id, method);
+      toast('Đã xác nhận. Cảm ơn bạn!');
+    } else if (act === 'dispute') {
+      const r = await ask({ title: 'Báo tranh chấp', message: 'Tiền vẫn được giữ cho tới khi CSKH xử lý xong.', confirm: 'Gửi tranh chấp',
+        field: { label: 'Điều gì chưa đúng với cuộc gọi này?', multiline: true, required: true, maxlength: 500 } });
+      if (!r) return;
+      await api.orders.dispute(id, r.value);
+      toast('Đã gửi tranh chấp. CSKH sẽ xem xét.');
+    } else if (act === 'rate') {
+      const r = await ask({ title: `Đánh giá ${o.freelancerName}`, message: 'Đánh giá hiện công khai trên hồ sơ người nói hộ. Số điện thoại của bạn được che, lời nhắn không bao giờ hiện.', confirm: 'Gửi đánh giá', stars: true,
+        field: { label: 'Nhận xét (không bắt buộc)', multiline: true, maxlength: 500, placeholder: 'Giọng thế nào, người ấy phản ứng ra sao…' } });
+      if (!r) return;
+      await api.orders.rate(id, r.stars, r.value);
+      toast('Cảm ơn bạn đã đánh giá!');
+    }
     await renderOrders();
-    toast('Đã gửi tranh chấp. CSKH sẽ xem xét.');
-  });
+  }));
 </script>
 </body>
 </html>

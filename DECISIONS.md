@@ -35,7 +35,10 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 
 ## 5. Bằng chứng & đóng đơn
 
-- **Số điện thoại người được gọi (callee) là trường bắt buộc khi đặt đơn** — trước đây bị thiếu hoàn toàn (cả `dat-don.html` lẫn `src/db.js`), nghĩa là người nói hộ nhận đơn có kịch bản và giá nhưng không biết gọi cho ai. Buyer nhập ở bước viết lời nhắn, chuẩn hóa về E.164 giống số đăng nhập (`toE164` trong `assets/firebase-client.js`, nay export dùng chung). Người nói hộ chỉ thấy số này khi đơn đã `da_duyet_cho_goi` — cùng quy ước đang áp dụng cho nội dung kịch bản đầy đủ (ẩn/hiện xử lý ở client, API vẫn trả nguyên dữ liệu, không có lớp gate ở server). Đơn tạo trước thời điểm này không có trường này; `toLocalPhone` xử lý rỗng bằng "không rõ" thay vì lỗi.
+- **Số điện thoại người được gọi (callee) là trường bắt buộc khi đặt đơn** — trước đây bị thiếu hoàn toàn (cả `dat-don.html` lẫn `src/db.js`), nghĩa là người nói hộ nhận đơn có kịch bản và giá nhưng không biết gọi cho ai. Buyer nhập ở bước viết lời nhắn, chuẩn hóa về E.164 giống số đăng nhập (`toE164` trong `assets/firebase-client.js`). Đơn còn có thêm: tên người ấy, dịp, thời điểm hẹn gọi (`scheduledAt`, trong 60 ngày tới), và ghi chú riêng cho người nói hộ.
+- **Ai thấy gì được quyết định ở server** (`freelancerOrderView`/`buyerOrderView` trong `src/routes.js`), không phải ở giao diện — trước đây API trả nguyên đơn và trang chỉ "giấu" bằng JS, tức dữ liệu đã tới trình duyệt. Người nói hộ: trước khi duyệt chỉ thấy 120 ký tự đầu lời nhắn; **số người nhận chỉ hiện đúng lúc đơn `da_duyet_cho_goi`** (lúc cần gọi), gọi xong là thôi hiện; ghi chú và tên người nhận hiện từ lúc duyệt; **không bao giờ thấy số của người thuê**. Người thuê: không thấy số cá nhân của người nói hộ. Ghi chú riêng cũng phải qua CSKH duyệt (admin thấy cùng lời nhắn), vì người nói hộ đọc được nó.
+- **[CHƯA CHỐT — mặc định do Claude đặt, cần chủ dự án duyệt]** Huỷ đơn: buyer tự huỷ được khi lời nhắn **còn chờ duyệt** → hoàn tiền đủ ngay; người nói hộ **từ chối** được khi chờ duyệt hoặc đã duyệt nhưng chưa báo gọi (bắt buộc ghi lý do, buyer thấy lý do) → buyer được hoàn đủ. Trạng thái mới `da_huy` (`cancelledBy`: buyer/freelancer). Lý do chọn mặc định này: trước đây không có đường thoát nào — người nói hộ ốm hay trùng lịch thì đơn kẹt, tiền buyer kẹt. Chưa có chế tài cho người nói hộ từ chối nhiều lần.
+- **[CHƯA CHỐT]** Không cho tự đặt đơn với chính mình (chặn tự tạo đánh giá ảo / xoay vòng tiền).
 - Kiểm duyệt kịch bản (script) trước khi gọi.
 - Ghi âm cuộc gọi làm bằng chứng mặc định.
 - Nếu lỡ không ghi âm được: tick "yêu cầu người thuê xác nhận" — hợp lệ khi buyer (a) xác nhận đã đạt mục đích, hoặc (b) có mặt nghe trực tiếp lúc gọi diễn ra, hoặc (c) hỏi lại người được gọi sau đó.
@@ -68,6 +71,10 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 - [ ] Giải pháp ghi âm cuộc gọi thật (xem cảnh báo ở §6) — hiện chưa có gì, chỉ là checkbox tự khai.
 - [ ] Thay passcode admin cố định (`admin123` trong code) bằng tài khoản CSKH thật trước khi đưa cho ai ngoài dùng thử.
 - [ ] Nối OTP thật — vướng Firebase Phone Auth cần gói Blaze mới gửi được SMS, chưa quyết định nâng gói hay đổi sang SMS provider khác. Đang chạy tạm bằng OTP mô phỏng, xem §12 (rủi ro + cách gỡ khi sẵn sàng).
+- [ ] **Thông báo** — hiện không có SMS/email/push nào: người nói hộ phải tự mở trang mới biết có đơn mới hay đơn vừa được duyệt, buyer phải tự mở trang mới biết người nói hộ đã gọi. Với đơn hẹn giờ (đêm Giáng sinh) đây là rủi ro thật. Cần chọn kênh (Zalo OA, SMS, email, web push).
+- [ ] Duyệt chính sách huỷ/từ chối và chặn tự đặt đơn (§5) — đang là mặc định Claude đặt.
+- [ ] "Ghi âm làm bằng chứng" vẫn đang được quảng cáo ở trang chủ trong khi chưa có ghi âm thật (§6) — cân nhắc sửa câu chữ trước khi mở cho người dùng thật.
+- [ ] Danh sách phong cách giọng (10 mục) và danh sách dịp (8 mục) trong `assets/catalog.js` là bản Claude soạn, chưa được duyệt.
 
 ## 9. Bản demo "backend giả" (fake backend prototype)
 
@@ -143,3 +150,27 @@ Theo yêu cầu, `/api/wallet/topup-link` vẫn gọi payOS thật để tạo p
 **Cách quay lại thật:** xoá đúng 1 dòng `await db.creditTopup(orderCode);` trong `src/routes.js` (và bỏ field `simulated` khỏi response) — luồng sẽ quay về phụ thuộc hoàn toàn vào webhook `/api/payos/webhook` thật, không cần sửa gì khác.
 
 **Chưa test:** webhook thật (`/api/payos/webhook`) chưa từng nhận request thật nào từ payOS vì chưa có giao dịch thật nào xảy ra — khi tắt simulate, cần test riêng bước này.
+
+## 14. Nâng cấp marketplace (2026-11) — học theo Playerduo, Cameo, Fiverr
+
+Lý do: danh sách người nói hộ chỉ là một lưới thẻ trong `dat-don.html` với vài trường tự gõ, không nghe được giọng, không có hồ sơ, không có đánh giá có lời. Các sàn thuê người tương tự đều đi theo cùng một luồng: **duyệt danh sách có bộ lọc → xem hồ sơ (mẫu giọng/video, đánh giá) → đặt với form "cho ai, dịp gì, khi nào" → theo dõi đơn theo bước**. Đã dựng đúng luồng đó.
+
+**Trang mới**
+- `nguoi-noi-ho.html` — danh sách công khai, không cần đăng nhập. Lọc theo: phong cách giọng (chip), giọng nam/nữ, vùng miền, nhà mạng, giá khởi điểm, đánh giá tối thiểu, chỉ số đẹp, có giọng mẫu, chỉ người đang nhận đơn. Sắp xếp: Gợi ý / đánh giá / nhiều cuộc gọi / giá / mới tham gia. Trạng thái lọc nằm trên URL nên chia sẻ được. "Gợi ý" kéo điểm đánh giá về 4,5 khi còn ít đánh giá, để một đánh giá 5★ không vượt mặt năm mươi đánh giá 4,9★.
+- `ho-so.html?id=…` — hồ sơ công khai: giới thiệu, giọng mẫu, thông tin, đánh giá có lời nhận xét (số người thuê bị che `090•••567`, lời nhắn không bao giờ hiện), nút đặt, nút sao chép liên kết để người nói hộ tự chia sẻ.
+
+**Thay đổi lớn**
+- **Mã công khai (`publicId`) thay cho số điện thoại** trong mọi thứ công khai — trước đây `GET /api/freelancers` trả số điện thoại cá nhân của mọi người nói hộ cho bất kỳ ai. Người nói hộ cũ được gán mã và đếm lại số cuộc gọi đã hoàn thành ngay lần đầu được đọc.
+- **Hồ sơ dùng danh mục cố định** (`assets/catalog.js`) thay cho ô tự gõ, vì chữ tự do không lọc được. Thêm: giới thiệu, giọng nam/nữ, vùng miền, tối đa 5 phong cách giọng, ý nghĩa số đẹp, giờ có thể gọi, bật/tắt nhận đơn.
+- **Giọng mẫu**: người nói hộ thu tối đa 20 giây ngay trên trình duyệt (MediaRecorder, 32 kbps) hoặc tải tệp lên. Lưu dạng data URL trong collection riêng `voiceDemos/{phone}` để danh sách vẫn nhẹ — giữ trong Firestore để không phải thêm dịch vụ lưu trữ tệp. Giới hạn 600.000 ký tự (~450 KB), dưới mức 1 MiB/document của Firestore.
+- **Đánh giá có lời nhận xét**, công khai trên hồ sơ. Đếm `completedCount` khi đơn đóng (xác nhận, tự xác nhận 48h, hoặc CSKH giải ngân khi tranh chấp).
+- `dat-don.html` thành trang đặt đơn + "Đơn của tôi": bảng tạm tính chi tiết, báo thiếu tiền kèm nút nạp đúng số thiếu, nháp lời nhắn giữ trong trình duyệt, đơn chia tab và có thanh tiến độ 4 bước, "Đặt lại" với người cũ.
+- `freelancer.html` thành bảng điều khiển: số liệu, đơn nhóm theo việc cần làm (đơn cần gọi có nút bấm gọi, đếm ngược giờ hẹn, nút sao chép lời nhắn), tab hồ sơ + giọng mẫu, tab rút tiền.
+- Trang chủ: bỏ 4 hồ sơ minh hoạ, lấy 4 người thật xếp theo "Gợi ý"; thêm mục câu hỏi thường gặp (mọi câu trả lời mô tả đúng cách hệ thống đang chạy, không hứa thêm).
+- "Từ X đ" trên thẻ = giá của lời nhắn ~100 chữ, dưới 2 phút, mọi tuỳ chọn ở mức cơ bản, nhân hệ số giá — tính ở server (`fromPrice` trong `src/db.js`).
+
+**Lỗ hổng tìm thấy và đã sửa trong lần này** (đều đã có kiểm thử tự động trong `api.selftest.js`, và kiểm thử đó *thất bại* khi chạy trên backend cũ):
+- `POST /api/freelancer/profile` ghi thẳng mọi trường client gửi vào hồ sơ → ai đăng nhập cũng tự đặt được `withdrawable` (số dư rút được), tự gỡ `blocked`, tự sửa điểm đánh giá. Giờ chỉ nhận danh sách trường cho phép.
+- Giá đơn tính theo `chars` do client gửi → gửi `chars: 1` kèm lời nhắn 2000 chữ là trả 1.000đ. Các hệ số `duration/speed/emotion/timing` cũng không kiểm → gửi `duration: 0.0001` là gần như miễn phí. Giờ server tự đếm chữ và chỉ nhận đúng các giá trị có trong form.
+- Chấm sao không giới hạn (`stars: 1000` thổi phồng điểm). Giờ chỉ nhận số nguyên 1–5.
+- Lộ số điện thoại người nói hộ ra công khai (xem trên).

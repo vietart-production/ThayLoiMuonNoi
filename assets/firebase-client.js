@@ -53,7 +53,7 @@ function loginDialog() {
   dialog.innerHTML = `
     <div class="login-panel">
       <svg height="14" viewBox="0 0 300 14" preserveAspectRatio="none" fill="#F3F6FA" aria-hidden="true"
-           style="position:absolute; left:1.25rem; width:calc(100% - 3.5rem); bottom:calc(100% - 1px); filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));">
+           style="position:absolute; left:1.25rem; width:calc(100% - 2.5rem); bottom:calc(100% - 1px); filter:drop-shadow(0 1px 1px rgba(0,0,0,.25));">
         <path d="M0 14 Q 18 1 37 9 T 75 9 T 113 9 T 150 9 T 188 9 T 225 9 T 263 9 T 300 9 L300 14 Z"/>
       </svg>
       <div class="login-body"></div>

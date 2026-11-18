@@ -5,6 +5,7 @@ const { requireAuth, requireAdmin } = require('./authMiddleware');
 const { createTopupLink, verifyWebhook } = require('./payos');
 
 const router = express.Router();
+const { STATUS } = db;
 
 // Firestore Timestamp doesn't have a toJSON(), so a bare JSON.stringify turns createdAt/
 // calledAt/closedAt into {_seconds, _nanoseconds} — useless on the frontend. Convert to
@@ -24,24 +25,80 @@ function send(promise, res) {
   promise.then((data) => res.json(serialize(data))).catch((e) => res.status(400).json({ error: e.message }));
 }
 
-// ---- Public ----
-// Strip fields a stranger shouldn't see (withdrawable balance, raw rating sum) — only
-// /admin/freelancers (admin-only) gets the full document.
+/*
+ * What each audience may see. These run on every response that leaves the server, so
+ * hiding something here is real — unlike hiding it in a page, where the data has already
+ * reached the browser.
+ */
+
+// A stranger browsing: no phone number (public id instead), no balance, no raw sums.
+// Fields from before the profile rework (voiceNote, freeform voiceType) are mapped onto
+// the new ones so older profiles still read well.
 function publicFreelancerView(f) {
   const rating = f.ratingCount ? Math.round((f.ratingSum / f.ratingCount) * 10) / 10 : null;
+  const legacyTag = f.voiceType && f.voiceType !== 'Chưa tự chấm' ? [f.voiceType] : [];
   return {
-    phone: f.phone,
+    id: f.publicId,
     name: f.name,
-    voiceNote: f.voiceNote,
-    voiceType: f.voiceType,
-    numberType: f.numberType,
-    carrier: f.carrier,
-    priceMultiplier: f.priceMultiplier,
+    bio: f.bio || f.voiceNote || '',
+    gender: f.gender || '',
+    region: f.region || '',
+    voiceTags: f.voiceTags && f.voiceTags.length ? f.voiceTags : legacyTag,
+    numberType: f.numberType || 'Số thường',
+    numberNote: f.numberNote || '',
+    carrier: f.carrier || '',
+    hours: f.hours || '',
+    accepting: f.accepting !== false,
+    hasVoiceDemo: !!f.hasVoiceDemo,
+    priceMultiplier: f.priceMultiplier || 1,
+    fromPrice: db.fromPrice(f.priceMultiplier),
     rating,
     ratingCount: f.ratingCount || 0,
+    completedCount: f.completedCount || 0,
+    joinedAt: f.createdAt || null,
   };
 }
+
+const preview = (s) => (s && s.length > 120 ? s.slice(0, 120) + '…' : s || '');
+
+// The freelancer on their own orders. The script and the buyer's notes are only shown
+// in full once moderation has passed them; the number to dial only while the call is
+// actually due — before approval there's nothing to act on, and after the call there's
+// no reason to keep holding a stranger's number. The buyer's own number is never shown.
+const SCRIPT_REVEALED = new Set([STATUS.APPROVED, STATUS.AWAITING_CONFIRM, STATUS.DISPUTED, STATUS.CLOSED, STATUS.REFUNDED]);
+function freelancerOrderView(o) {
+  const { buyerPhone, freelancerPhone, calleePhone, calleeName, script, note, moderation, ...rest } = o;
+  const revealed = SCRIPT_REVEALED.has(o.status);
+  return {
+    ...rest,
+    script: revealed ? script : preview(script),
+    scriptIsPreview: !revealed && (script || '').length > 120,
+    note: revealed ? note || '' : '',
+    calleeName: revealed ? calleeName || '' : '',
+    calleePhone: o.status === STATUS.APPROVED ? calleePhone : null,
+  };
+}
+
+// The buyer on their own orders: everything they entered, plus which rule rejected the
+// script if one did, but not the freelancer's private phone number.
+function buyerOrderView(o, byPhone) {
+  const { freelancerPhone, buyerPhone, moderation, ...rest } = o;
+  const f = byPhone.get(freelancerPhone);
+  return {
+    ...rest,
+    freelancerName: o.freelancerName || (f && f.name) || 'Người nói hộ',
+    freelancerId: o.freelancerId || (f && f.publicId) || null,
+    bannedFlags: o.status === STATUS.REJECTED && moderation ? moderation.bannedFlags || [] : [],
+  };
+}
+
+// ---- Public ----
 router.get('/freelancers', (req, res) => send(db.listFreelancers().then((list) => list.map(publicFreelancerView)), res));
+router.get('/freelancers/:id', (req, res) => send(
+  db.getPublicProfile(req.params.id).then(({ freelancer, reviews }) => ({ ...publicFreelancerView(freelancer), reviews })),
+  res,
+));
+router.get('/freelancers/:id/voice-demo', (req, res) => send(db.getVoiceDemoByPublicId(req.params.id), res));
 router.post('/reports', (req, res) => send(db.submitReport(req.body || {}), res));
 
 // TEMPORARY simulated OTP (see src/db.js) — hands the code back instead of texting it.
@@ -91,10 +148,19 @@ router.post('/wallet/topup-link', async (req, res) => {
   }
 });
 
-// ---- Freelancer profile ----
+// ---- Freelancer: own profile, voice demo, orders, withdrawals ----
+// /freelancer/me is the owner's own document, so it keeps the balance; fromPrice is
+// added so the profile form can show what buyers will see without re-implementing it.
+router.get('/freelancer/me', (req, res) => send(
+  db.getFreelancer(req.phone).then((f) => (f ? { ...f, fromPrice: db.fromPrice(f.priceMultiplier) } : null)),
+  res,
+));
 router.post('/freelancer/profile', (req, res) => send(db.upsertFreelancerProfile(req.phone, req.body || {}), res));
-router.get('/freelancer/me', (req, res) => send(db.getFreelancer(req.phone), res));
-router.get('/orders/assigned', (req, res) => send(db.listOrdersByFreelancer(req.phone), res));
+router.post('/freelancer/accepting', (req, res) => send(db.setAccepting(req.phone, !!(req.body || {}).accepting), res));
+router.get('/freelancer/voice-demo', (req, res) => send(db.getOwnVoiceDemo(req.phone), res));
+router.put('/freelancer/voice-demo', (req, res) => send(db.setVoiceDemo(req.phone, (req.body || {}).audio), res));
+router.delete('/freelancer/voice-demo', (req, res) => send(db.deleteVoiceDemo(req.phone), res));
+router.get('/orders/assigned', (req, res) => send(db.listOrdersByFreelancer(req.phone).then((list) => list.map(freelancerOrderView)), res));
 router.get('/withdrawals/mine', (req, res) => send(db.listWithdrawalsByFreelancer(req.phone), res));
 router.post('/withdrawals', (req, res) => {
   const { amount, bankNumber, bankHolder } = req.body || {};
@@ -102,20 +168,32 @@ router.post('/withdrawals', (req, res) => {
 });
 
 // ---- Buyer orders ----
-router.get('/orders/mine', (req, res) => send(db.listOrdersByBuyer(req.phone), res));
+router.get('/orders/mine', (req, res) => send((async () => {
+  const orders = await db.listOrdersByBuyer(req.phone);
+  // Orders from before freelancerName/freelancerId were stored on the order need one
+  // lookup per distinct freelancer to fill them in.
+  const missing = [...new Set(orders.filter((o) => !o.freelancerName || !o.freelancerId).map((o) => o.freelancerPhone))];
+  const found = await Promise.all(missing.map((p) => db.getFreelancer(p)));
+  const byPhone = new Map(missing.map((p, i) => [p, found[i]]));
+  return orders.map((o) => buyerOrderView(o, byPhone));
+})(), res));
 router.post('/orders', (req, res) => {
-  const { freelancerPhone, script, chars, duration, speed, emotion, timing, calleePhone } = req.body || {};
+  const b = req.body || {};
   send(db.createOrder({
     buyerPhone: req.phone,
-    freelancerPhone,
-    calleePhone,
-    script,
-    chars: Number(chars),
-    duration: Number(duration),
-    speed: Number(speed),
-    emotion: Number(emotion),
-    timing: Number(timing),
-  }), res);
+    freelancerId: b.freelancerId,
+    freelancerPhone: b.freelancerPhone,
+    calleePhone: b.calleePhone,
+    calleeName: b.calleeName,
+    occasion: b.occasion,
+    scheduledAt: b.scheduledAt,
+    note: b.note,
+    script: b.script,
+    duration: b.duration,
+    speed: b.speed,
+    emotion: b.emotion,
+    timing: b.timing,
+  }).then((o) => buyerOrderView(o, new Map())), res);
 });
 
 async function assertOrderParty(req, res, field) {
@@ -127,22 +205,30 @@ async function assertOrderParty(req, res, field) {
 
 router.post('/orders/:id/called', async (req, res) => {
   if (!(await assertOrderParty(req, res, 'freelancerPhone'))) return;
-  send(db.freelancerMarkCalled(req.params.id, { hasRecording: !!req.body.hasRecording }), res);
+  send(db.freelancerMarkCalled(req.params.id, { hasRecording: !!req.body.hasRecording }).then(freelancerOrderView), res);
+});
+router.post('/orders/:id/decline', async (req, res) => {
+  if (!(await assertOrderParty(req, res, 'freelancerPhone'))) return;
+  send(db.cancelOrder(req.params.id, { by: 'freelancer', reason: (req.body || {}).reason }).then(freelancerOrderView), res);
+});
+router.post('/orders/:id/cancel', async (req, res) => {
+  if (!(await assertOrderParty(req, res, 'buyerPhone'))) return;
+  send(db.cancelOrder(req.params.id, { by: 'buyer', reason: (req.body || {}).reason }).then((o) => buyerOrderView(o, new Map())), res);
 });
 router.post('/orders/:id/confirm', async (req, res) => {
   if (!(await assertOrderParty(req, res, 'buyerPhone'))) return;
-  send(db.buyerConfirm(req.params.id, { method: req.body.method }), res);
+  send(db.buyerConfirm(req.params.id, { method: req.body.method }).then((o) => buyerOrderView(o, new Map())), res);
 });
 router.post('/orders/:id/dispute', async (req, res) => {
   if (!(await assertOrderParty(req, res, 'buyerPhone'))) return;
-  send(db.buyerDispute(req.params.id, { reason: req.body.reason }), res);
+  send(db.buyerDispute(req.params.id, { reason: req.body.reason }).then((o) => buyerOrderView(o, new Map())), res);
 });
 router.post('/orders/:id/rate', async (req, res) => {
   if (!(await assertOrderParty(req, res, 'buyerPhone'))) return;
-  send(db.rateOrder(req.params.id, Number(req.body.stars)), res);
+  send(db.rateOrder(req.params.id, req.body.stars, req.body.comment).then((o) => buyerOrderView(o, new Map())), res);
 });
 
-// ---- Admin / CSKH ----
+// ---- Admin / CSKH ---- (full documents: moderation needs the script, callee and note)
 const admin = express.Router();
 admin.use(requireAdmin);
 admin.get('/orders/pending-review', (req, res) => send(db.listPendingReview(), res));

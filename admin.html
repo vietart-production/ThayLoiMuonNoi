@@ -16,11 +16,12 @@
 <div class="content-bg">
 
 <header class="navbar sticky top-0 z-50">
-  <nav class="max-w-5xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
+  <nav class="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
     <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói · CSKH</a>
     <div id="userBox" class="flex items-center gap-2 text-xs sm:order-last"></div>
     <div class="nav-links">
-      <a href="dat-don.html">Đặt một cuộc gọi</a>
+      <a href="nguoi-noi-ho.html">Tìm người nói hộ</a>
+      <a href="dat-don.html">Đơn của tôi</a>
       <a href="freelancer.html">Trở thành người nói hộ</a>
       <a href="report.html">Báo cáo cuộc gọi</a>
     </div>
@@ -84,6 +85,11 @@
   ];
 
   const $ = (id) => document.getElementById(id);
+  const callContext = (o) => [
+    o.occasion || 'Không ghi dịp',
+    `gọi ${o.calleeName ? o.calleeName + ' ' : ''}${o.calleePhone || 'không rõ số'}`,
+    o.scheduledAt ? 'hẹn ' + new Date(o.scheduledAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' }) : 'gọi sớm nhất có thể',
+  ].join(' · ');
 
   mountAuthWidget({ gate: $('auth'), onLogin: async () => {
     try {
@@ -116,8 +122,10 @@
           return `
           <div class="card p-4">
             <p class="font-semibold text-sm">Đơn ${o.id.slice(-6)} · ${esc(f ? f.name : o.freelancerPhone)} · ${o.price.toLocaleString('vi-VN')}đ</p>
+            <p class="faint text-xs mt-1">${esc(callContext(o))}</p>
             <p class="mt-2 text-sm" style="white-space:pre-wrap;">“${esc(o.script)}”</p>
-            <p class="faint text-xs mt-3">Đánh dấu nếu lời nhắn vi phạm:</p>
+            ${o.note ? `<p class="mt-2 text-sm"><span class="faint">Ghi chú gửi người nói hộ (cũng cần duyệt):</span> ${esc(o.note)}</p>` : ''}
+            <p class="faint text-xs mt-3">Đánh dấu nếu lời nhắn hoặc ghi chú vi phạm:</p>
             <div class="mt-1 grid sm:grid-cols-2 gap-1 text-xs muted">
               ${BANNED_CONTENT_CHECKLIST.map((c) => `
                 <label class="flex items-center gap-1.5"><input type="checkbox" class="flag-check" data-order="${o.id}" value="${c}"> ${c}</label>
@@ -154,7 +162,8 @@
       ? list.map((o) => `
         <div class="card p-4">
           <p class="font-semibold text-sm">Đơn ${o.id.slice(-6)} · ${o.price.toLocaleString('vi-VN')}đ</p>
-          <p class="faint text-xs mt-1">Gọi tới: ${esc(o.calleePhone || 'không rõ')}</p>
+          <p class="faint text-xs mt-1">${esc(callContext(o))}</p>
+          <p class="text-sm mt-2" style="white-space:pre-wrap;">“${esc(o.script)}”</p>
           <p class="faint text-xs mt-1">Lý do: ${esc(o.disputeReason)}</p>
           <p class="faint text-xs">Có ghi âm lúc báo xong cuộc gọi: ${o.hasRecording ? 'Có' : 'Không'}</p>
           <div class="mt-3 flex gap-2">

@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "selftest": "node snow.selftest.js && node phone.selftest.js"
+    "selftest": "node api.selftest.js && node snow.selftest.js && node phone.selftest.js"
   },
   "dependencies": {
     "@payos/node": "^2.0.6",

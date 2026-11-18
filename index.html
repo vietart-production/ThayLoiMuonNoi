@@ -124,6 +124,12 @@
   select:focus,input:focus{border-color:var(--gold);}
   input[type=range]{accent-color:var(--gold);}
   .accent{color:var(--gold-bright);}
+  .faq summary{cursor:pointer; font-weight:600; list-style:none; display:flex; justify-content:space-between; gap:1rem;}
+  .faq summary::-webkit-details-marker{display:none;}
+  .faq summary::after{content:"+"; color:var(--gold-bright); font-weight:700;}
+  .faq details[open] summary::after{content:"–";}
+  .faq p{margin-top:.75rem; color:var(--ink-dim); font-size:.92rem; line-height:1.65;}
+  .faq .card:hover{transform:none;}
   html{scroll-behavior:smooth;}
 </style>
 </head>
@@ -148,12 +154,12 @@
       <div class="hidden md:flex items-center gap-6 text-sm font-medium" style="color:var(--ink-dim);">
         <a href="#cach-hoat-dong" class="hover:text-[var(--gold-bright)]">Cách hoạt động</a>
         <a href="#dat-don" class="hover:text-[var(--gold-bright)]">Tính giá</a>
-        <a href="#freelancer" class="hover:text-[var(--gold-bright)]">Người nói hộ</a>
+        <a href="nguoi-noi-ho.html" class="hover:text-[var(--gold-bright)]">Người nói hộ</a>
         <a href="#an-toan" class="hover:text-[var(--gold-bright)]">An toàn</a>
       </div>
       <div class="flex items-center gap-3">
       <div id="userBox" data-login class="flex items-center gap-2 text-sm" style="color:var(--ink-dim);"></div>
-      <a href="dat-don.html" class="btn-primary relative text-sm font-semibold px-4 py-2 rounded-full inline-flex items-center gap-1.5">
+      <a href="nguoi-noi-ho.html" class="btn-primary relative text-sm font-semibold px-4 py-2 rounded-full inline-flex items-center gap-1.5">
         <svg width="24" height="22" viewBox="0 0 26 24" style="position:absolute; top:-13px; right:-5px; transform:rotate(18deg); filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));">
           <path d="M3 22c0-9 3-17 11-17 6 0 9 5 9 9-5-2-9 1-9 6 0 1 .3 2 .3 2H3Z" fill="#C21F2B"/>
           <circle cx="22" cy="5" r="3" fill="#fff"/>
@@ -183,7 +189,7 @@
         nói đúng điều bạn muốn gửi tới người ấy.
       </p>
       <div class="mt-7 flex flex-wrap gap-3">
-        <a href="dat-don.html" class="btn-primary relative font-semibold px-6 py-3 rounded-full inline-flex items-center gap-2">
+        <a href="nguoi-noi-ho.html" class="btn-primary relative font-semibold px-6 py-3 rounded-full inline-flex items-center gap-2">
           <!-- Snow cap. The path's flat underside is the last line of the viewBox (y=16 of 16),
                so bottom:100% stands it exactly on the button's top edge whatever the button's
                height; the 1px pull-down just hides the seam. Don't reintroduce a negative top:
@@ -341,68 +347,16 @@
 
 <div class="divider"><svg width="20" height="16" viewBox="0 0 20 16" fill="none"><path d="M9 14c-3-2-5-6-3-7 1 2 3 4 3 7Z" fill="var(--pine)"/><path d="M9 14c3-2 5-6 3-7-1 2-3 4-3 7Z" fill="#4F8A63"/><circle cx="7.5" cy="13.5" r="1.2" fill="var(--red)"/><circle cx="10.5" cy="13.8" r="1.1" fill="var(--red-bright)"/></svg></div>
 
-<!-- Freelancer -->
+<!-- Freelancer: filled from the API by the module script at the bottom -->
 <section id="freelancer" class="max-w-6xl mx-auto px-5 py-16">
   <h2 class="text-2xl md:text-3xl font-bold text-center display">Những giọng nói đang chờ nói hộ bạn</h2>
-  <p class="mt-2 text-center max-w-xl mx-auto" style="color:var(--ink-dim);">Mỗi người cho thuê tự chấm loại giọng, loại số và ghi rõ nhà mạng của mình.</p>
-  <div class="mt-10 grid sm:grid-cols-2 md:grid-cols-4 gap-5">
-    <div class="card rounded-2xl p-5">
-      <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold">MT</div>
-      <h3 class="mt-3 font-bold">Minh Thư</h3>
-      <p class="text-xs mt-1" style="color:var(--ink-faint);">Giọng ấm, truyền cảm</p>
-      <div class="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-        <span class="px-2 py-0.5 rounded-full pill-pine font-medium">Số đẹp · thần tài</span>
-        <span class="px-2 py-0.5 rounded-full pill-neutral font-medium">Viettel</span>
-      </div>
-      <p class="mt-3 text-sm star">★★★★★ <span style="color:var(--ink-faint);" class="font-normal">4.9 (128 đơn)</span></p>
-      <p class="mt-1 text-sm font-bold" style="color:var(--ink);">Từ 15.000đ</p>
-      <a href="dat-don.html" class="mt-3 block text-center w-full btn-outline rounded-full py-1.5 text-sm font-semibold">Đặt cuộc gọi</a>
-    </div>
-    <div class="card rounded-2xl p-5">
-      <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold">AK</div>
-      <h3 class="mt-3 font-bold">Anh Khoa</h3>
-      <p class="text-xs mt-1" style="color:var(--ink-faint);">Giọng trầm, nghiêm túc</p>
-      <div class="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-        <span class="px-2 py-0.5 rounded-full pill-neutral font-medium">Số thường</span>
-        <span class="px-2 py-0.5 rounded-full pill-neutral font-medium">Mobifone</span>
-      </div>
-      <p class="mt-3 text-sm star">★★★★★ <span style="color:var(--ink-faint);" class="font-normal">4.8 (76 đơn)</span></p>
-      <p class="mt-1 text-sm font-bold" style="color:var(--ink);">Từ 12.000đ</p>
-      <a href="dat-don.html" class="mt-3 block text-center w-full btn-outline rounded-full py-1.5 text-sm font-semibold">Đặt cuộc gọi</a>
-    </div>
-    <div class="card relative rounded-2xl p-5" style="border-color:rgba(232,180,92,.35);">
-      <span class="absolute -top-2.5 left-4 text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full" style="background:linear-gradient(135deg,var(--gold-bright),var(--gold)); color:var(--ink-dark);">Nổi bật</span>
-      <svg class="absolute -top-2 -right-2" width="30" height="28" viewBox="0 0 30 28" fill="none">
-        <path d="M15 15c-6-4-9-11-5-12 1.5 4 4 7 5 12Z" fill="#2F6B3F"/>
-        <path d="M15 15c6-4 9-11 5-12-1.5 4-4 7-5 12Z" fill="#3C7F4C"/>
-        <circle cx="13.5" cy="21" r="2.2" fill="var(--red)"/>
-        <circle cx="17" cy="21.5" r="2" fill="var(--red-bright)"/>
-      </svg>
-      <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold">BN</div>
-      <h3 class="mt-3 font-bold">Bảo Ngọc</h3>
-      <p class="text-xs mt-1" style="color:var(--ink-faint);">Giọng trong, vui tươi</p>
-      <div class="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-        <span class="px-2 py-0.5 rounded-full pill-pine font-medium">Số đẹp · ngày sinh</span>
-        <span class="px-2 py-0.5 rounded-full pill-neutral font-medium">Vinaphone</span>
-      </div>
-      <p class="mt-3 text-sm star">★★★★★ <span style="color:var(--ink-faint);" class="font-normal">5.0 (41 đơn)</span></p>
-      <p class="mt-1 text-sm font-bold" style="color:var(--ink);">Từ 18.000đ</p>
-      <a href="dat-don.html" class="mt-3 block text-center w-full btn-outline rounded-full py-1.5 text-sm font-semibold">Đặt cuộc gọi</a>
-    </div>
-    <div class="card rounded-2xl p-5">
-      <div class="avatar w-12 h-12 rounded-full flex items-center justify-center font-bold">GH</div>
-      <h3 class="mt-3 font-bold">Gia Hân</h3>
-      <p class="text-xs mt-1" style="color:var(--ink-faint);">Giọng nhẹ nhàng, dễ thương</p>
-      <div class="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-        <span class="px-2 py-0.5 rounded-full pill-neutral font-medium">Số thường</span>
-        <span class="px-2 py-0.5 rounded-full pill-neutral font-medium">Viettel</span>
-      </div>
-      <p class="mt-3 text-sm star">★★★★☆ <span style="color:var(--ink-faint);" class="font-normal">4.7 (95 đơn)</span></p>
-      <p class="mt-1 text-sm font-bold" style="color:var(--ink);">Từ 10.000đ</p>
-      <a href="dat-don.html" class="mt-3 block text-center w-full btn-outline rounded-full py-1.5 text-sm font-semibold">Đặt cuộc gọi</a>
-    </div>
+  <p class="mt-2 text-center max-w-xl mx-auto" style="color:var(--ink-dim);">Bấm nút vàng để nghe thử giọng ngay tại đây. Đánh giá là của chính những người đã thuê.</p>
+  <div id="topFreelancers" class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
   </div>
-  <p class="mt-6 text-center text-xs" style="color:var(--ink-faint);">*Hồ sơ minh họa. Danh sách người nói hộ thực tế hiển thị khi bạn đặt đơn.</p>
+  <div class="mt-8 text-center">
+    <a href="nguoi-noi-ho.html" class="btn-outline inline-flex rounded-full px-6 py-2.5 font-semibold">Xem tất cả người nói hộ</a>
+  </div>
 </section>
 
 <div class="divider"><svg width="14" height="18" viewBox="0 0 14 18" fill="none"><rect x="5.5" y="0" width="3" height="3" rx="1" fill="var(--gold)"/><circle cx="7" cy="10" r="6.5" fill="var(--red)" stroke="var(--red-dark)" stroke-width="0.5"/><ellipse cx="4.5" cy="7" rx="1.8" ry="2.5" fill="rgba(255,255,255,.3)"/></svg></div>
@@ -432,6 +386,42 @@
       <h3 class="mt-4 font-bold">Giữ tiền an toàn tới khi xong</h3>
       <p class="mt-2 text-sm leading-relaxed" style="color:var(--ink-dim);">Tiền được giữ tạm (escrow) khi đặt đơn, chỉ giải ngân cho người nói hộ khi bạn xác nhận đã đạt mục đích.</p>
     </div>
+  </div>
+</section>
+
+<div class="divider"><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)"><path d="M12 2l1.8 5.6L19.5 9l-5.7 1.4L12 16l-1.8-5.6L4.5 9l5.7-1.4L12 2Z"/></svg></div>
+
+<section id="hoi-dap" class="max-w-3xl mx-auto px-5 py-16">
+  <h2 class="text-2xl md:text-3xl font-bold text-center display">Câu hỏi thường gặp</h2>
+  <div class="mt-10 space-y-3 faq">
+    <details class="card rounded-2xl p-5">
+      <summary>Người ấy có biết ai nhờ gọi không?</summary>
+      <p>Chỉ khi bạn viết điều đó trong lời nhắn. Người nói hộ nói theo lời nhắn đã được duyệt, và không bao giờ thấy số điện thoại hay thông tin tài khoản của bạn.</p>
+    </details>
+    <details class="card rounded-2xl p-5">
+      <summary>Tiền của tôi được giữ thế nào?</summary>
+      <p>Khi đặt đơn, tiền được trừ khỏi ví và giữ tạm. Người nói hộ chỉ nhận được tiền sau khi bạn xác nhận cuộc gọi đã diễn ra. Nếu bạn không phản hồi trong 48 giờ sau khi người nói hộ báo đã gọi, đơn tự xác nhận.</p>
+    </details>
+    <details class="card rounded-2xl p-5">
+      <summary>Tôi có huỷ đơn được không?</summary>
+      <p>Được, miễn phí, chừng nào lời nhắn còn đang chờ duyệt — tiền hoàn về ví ngay. Nếu người nói hộ không gọi được, họ có thể từ chối đơn và bạn cũng được hoàn tiền đầy đủ.</p>
+    </details>
+    <details class="card rounded-2xl p-5">
+      <summary>Nếu cuộc gọi không như tôi muốn?</summary>
+      <p>Đừng xác nhận — hãy báo tranh chấp ngay trong đơn. Tiền vẫn được giữ cho tới khi CSKH xem xét và quyết định hoàn tiền cho bạn hay trả cho người nói hộ.</p>
+    </details>
+    <details class="card rounded-2xl p-5">
+      <summary>Lời nhắn nào sẽ bị từ chối?</summary>
+      <p>Đe dọa, đòi nợ, mạo danh cơ quan nhà nước hay ngân hàng, nội dung khiêu dâm hoặc quấy rối, nội dung không phù hợp liên quan tới người dưới 18 tuổi, lừa đảo, và nội dung chính trị nhạy cảm. Lời nhắn bị từ chối thì tiền được hoàn đầy đủ.</p>
+    </details>
+    <details class="card rounded-2xl p-5">
+      <summary>Tôi vừa nhận một cuộc gọi từ dịch vụ này và không muốn nhận nữa</summary>
+      <p>Hãy <a href="report.html" class="underline" style="color:var(--gold-bright);">gửi báo cáo</a> — không cần tài khoản. CSKH xem xét và có thể khoá tài khoản người nói hộ liên quan.</p>
+    </details>
+    <details class="card rounded-2xl p-5">
+      <summary>Làm sao để trở thành người nói hộ?</summary>
+      <p>Đăng nhập bằng số điện thoại ở <a href="freelancer.html" class="underline" style="color:var(--gold-bright);">khu vực người nói hộ</a>, điền hồ sơ và thu một đoạn giọng mẫu ngắn. Bạn tự đặt hệ số giá và bật, tắt việc nhận đơn bất cứ lúc nào.</p>
+    </details>
   </div>
 </section>
 
@@ -555,7 +545,22 @@
   // to pass here: browsing without an account is fine on this page, so there is no gate,
   // and the header slot carries data-login, which is what puts a "Đăng nhập" button in it.
   import { mountAuthWidget } from './assets/firebase-client.js';
+  import { api } from './assets/api-client.js';
+  import { freelancerCard, wireVoiceButtons, recommendedScore } from './assets/catalog.js';
   mountAuthWidget();
+
+  // The real top four, ranked the same way as "Gợi ý" on nguoi-noi-ho.html.
+  const top = document.getElementById('topFreelancers');
+  try {
+    const list = (await api.freelancers.list()).filter((f) => f.accepting)
+      .sort((a, b) => recommendedScore(b) - recommendedScore(a)).slice(0, 4);
+    top.innerHTML = list.length
+      ? list.map(freelancerCard).join('')
+      : '<div class="empty sm:col-span-2 lg:col-span-4"><strong>Chưa có người nói hộ nào đang nhận đơn</strong><a href="freelancer.html" class="underline" style="color:var(--gold-bright);">Trở thành người nói hộ đầu tiên</a></div>';
+    wireVoiceButtons(top);
+  } catch (e) {
+    top.innerHTML = '<div class="empty sm:col-span-2 lg:col-span-4">Chưa tải được danh sách lúc này. <a href="nguoi-noi-ho.html" class="underline" style="color:var(--gold-bright);">Mở trang người nói hộ</a></div>';
+  }
 </script>
 
 </body>

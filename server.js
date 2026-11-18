@@ -11,7 +11,9 @@ app.use(cors({ origin: [
   'http://127.0.0.1:5500',
   'http://localhost:5500',
 ] }));
-app.use(express.json());
+// 1 MB, not express's 100 KB default: a freelancer's ~20 s voice demo arrives as a base64
+// data URL (src/db.js caps it at 600k characters).
+app.use(express.json({ limit: '1mb' }));
 app.get('/healthz', (req, res) => res.send('ok'));
 
 try {

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tìm người nói hộ — Thay Lời Muốn Nói</title>
+<meta name="description" content="Nghe thử giọng, xem đánh giá và chọn người gọi điện nói hộ lời bạn muốn gửi.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎄</text></svg>">
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+  .filters summary{list-style:none; cursor:pointer;}
+  .filters summary::-webkit-details-marker{display:none;}
+  .filter-group + .filter-group{border-top:1px solid var(--line-soft); padding-top:1rem; margin-top:1rem;}
+  .filter-title{font-size:.78rem; font-weight:700; color:var(--ink-dim); margin-bottom:.55rem;}
+  .filter-opts{display:flex; flex-wrap:wrap; gap:.4rem;}
+  .check{display:flex; align-items:center; gap:.55rem; font-size:.85rem; color:var(--ink-dim); padding:.2rem 0; cursor:pointer;}
+  .check input{accent-color:var(--gold); width:1rem; height:1rem;}
+  .search{position:relative; flex:1; min-width:14rem;}
+  .search input{width:100%; padding-left:2.4rem; min-height:2.9rem; border-radius:9999px;}
+  .search svg{position:absolute; left:.95rem; top:50%; transform:translateY(-50%); color:var(--ink-faint);}
+  @media (min-width:1024px){ .filters summary{display:none;} }
+  /* On a phone ten chips would wrap into four rows before the first result; one row that
+     scrolls sideways keeps the results on the first screen. */
+  @media (max-width:639px){
+    #tagChips{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-right:-1.25rem; padding-right:1.25rem;}
+    #tagChips .chip{flex-shrink:0;}
+  }
+</style>
+</head>
+<body class="antialiased">
+<div class="content-bg">
+
+<header class="navbar sticky top-0 z-50">
+  <nav class="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
+    <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói</a>
+    <div id="userBox" data-login class="flex items-center gap-2 text-xs sm:order-last"></div>
+    <div class="nav-links">
+      <a href="nguoi-noi-ho.html" aria-current="page">Tìm người nói hộ</a>
+      <a href="dat-don.html">Đơn của tôi</a>
+      <a href="freelancer.html">Trở thành người nói hộ</a>
+      <a href="report.html">Báo cáo cuộc gọi</a>
+    </div>
+  </nav>
+</header>
+
+<main class="max-w-6xl mx-auto px-5 py-10">
+  <h1 class="text-3xl md:text-4xl font-bold display">Tìm người nói hộ</h1>
+  <p class="muted mt-2">Nghe thử giọng, xem đánh giá rồi chọn người gọi thay bạn.</p>
+
+  <div class="mt-6 flex flex-wrap gap-3 items-center">
+    <label class="search">
+      <span class="sr-only">Tìm kiếm</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Tìm theo tên, giới thiệu, phong cách giọng…" autocomplete="off">
+    </label>
+    <label class="flex items-center gap-2 text-sm">
+      <span class="faint">Sắp xếp</span>
+      <select id="sort">
+        <option value="goi-y">Gợi ý</option>
+        <option value="danh-gia">Đánh giá cao nhất</option>
+        <option value="nhieu-nhat">Nhiều cuộc gọi nhất</option>
+        <option value="gia">Giá thấp nhất</option>
+        <option value="moi">Mới tham gia</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="tagChips" class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Phong cách giọng"></div>
+
+  <div class="mt-8 grid lg:grid-cols-[15rem_minmax(0,1fr)] gap-8 items-start">
+    <details id="filters" class="filters card p-4 lg:sticky lg:top-24">
+      <summary class="flex items-center justify-between font-semibold text-sm">
+        <span>Bộ lọc <span id="filterCount" class="faint font-normal"></span></span>
+        <span class="faint text-xs">Mở / đóng</span>
+      </summary>
+      <div class="mt-4 lg:mt-0">
+        <div class="filter-group">
+          <p class="filter-title">Giọng</p>
+          <div class="filter-opts" id="fGender"></div>
+        </div>
+        <div class="filter-group">
+          <p class="filter-title">Vùng miền</p>
+          <div id="fRegion"></div>
+        </div>
+        <div class="filter-group">
+          <p class="filter-title">Nhà mạng gọi đi</p>
+          <div id="fCarrier"></div>
+        </div>
+        <div class="filter-group">
+          <p class="filter-title">Giá khởi điểm</p>
+          <select id="fPrice" class="w-full">
+            <option value="">Mọi mức giá</option>
+            <option value="5000">Đến 5.000đ</option>
+            <option value="10000">Đến 10.000đ</option>
+            <option value="20000">Đến 20.000đ</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <p class="filter-title">Đánh giá</p>
+          <select id="fRating" class="w-full">
+            <option value="0">Mọi đánh giá</option>
+            <option value="4">Từ 4 sao</option>
+            <option value="4.5">Từ 4,5 sao</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="check"><input type="checkbox" id="fNice"> Chỉ số đẹp</label>
+          <label class="check"><input type="checkbox" id="fVoice"> Có giọng mẫu để nghe thử</label>
+          <label class="check"><input type="checkbox" id="fOpen" checked> Chỉ người đang nhận đơn</label>
+        </div>
+        <button id="reset" type="button" class="mt-5 w-full text-sm faint underline">Xoá bộ lọc</button>
+      </div>
+    </details>
+
+    <section aria-live="polite">
+      <p id="resultCount" class="text-sm muted mb-4">&nbsp;</p>
+      <div id="grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="border-t py-8 px-5 text-center text-xs" style="border-color:var(--line); color:var(--ink-faint);">
+  <div class="mb-2" style="font-size:16px; opacity:.7;">🎄</div>
+  Thay Lời Muốn Nói — nền tảng thuê người nói hộ lời bạn muốn gửi. Đăng nhập và thanh toán hiện đang ở chế độ thử nghiệm.
+  <div class="mt-2"><a href="report.html" class="hover:text-[var(--gold-bright)]" style="text-decoration:underline;">Bạn vừa nhận một cuộc gọi và muốn báo cáo?</a></div>
+</footer>
+</div>
+
+<script type="module">
+  import { mountAuthWidget } from './assets/firebase-client.js';
+  import { api } from './assets/api-client.js';
+  import { esc } from './assets/ui.js';
+  import { VOICE_TAGS, GENDERS, REGIONS, CARRIERS, freelancerCard, wireVoiceButtons, isNiceNumber, recommendedScore } from './assets/catalog.js';
+
+  mountAuthWidget();
+  const $ = (id) => document.getElementById(id);
+
+  // Filter controls are built from catalog.js so the lists exist in one place.
+  $('tagChips').innerHTML = VOICE_TAGS.map((t) => `<label class="chip"><input type="checkbox" name="tag" value="${esc(t)}"><span>${esc(t)}</span></label>`).join('');
+  $('fGender').innerHTML = [['', 'Tất cả'], ...Object.entries(GENDERS)].map(([v, l]) =>
+    `<label class="chip"><input type="radio" name="gender" value="${v}" ${v ? '' : 'checked'}><span>${esc(l)}</span></label>`).join('');
+  $('fRegion').innerHTML = Object.entries(REGIONS).map(([v, l]) => `<label class="check"><input type="checkbox" name="region" value="${v}"> ${esc(l)}</label>`).join('');
+  $('fCarrier').innerHTML = CARRIERS.map((c) => `<label class="check"><input type="checkbox" name="carrier" value="${esc(c)}"> ${esc(c)}</label>`).join('');
+  if (window.matchMedia('(min-width: 1024px)').matches) $('filters').open = true;
+
+  const checked = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map((i) => i.value);
+
+  function readFilters() {
+    return {
+      q: $('q').value.trim().toLowerCase(),
+      tags: checked('tag'),
+      gender: checked('gender')[0] || '',
+      regions: checked('region'),
+      carriers: checked('carrier'),
+      maxPrice: Number($('fPrice').value) || 0,
+      minRating: Number($('fRating').value) || 0,
+      nice: $('fNice').checked,
+      voice: $('fVoice').checked,
+      open: $('fOpen').checked,
+      sort: $('sort').value,
+    };
+  }
+
+  // The filter state lives in the URL too, so a filtered list can be shared or
+  // bookmarked, and Back returns to it.
+  function writeUrl(f) {
+    const p = new URLSearchParams();
+    if (f.q) p.set('q', f.q);
+    if (f.tags.length) p.set('tags', f.tags.join(','));
+    if (f.gender) p.set('g', f.gender);
+    if (f.regions.length) p.set('r', f.regions.join(','));
+    if (f.carriers.length) p.set('c', f.carriers.join(','));
+    if (f.maxPrice) p.set('price', f.maxPrice);
+    if (f.minRating) p.set('rating', f.minRating);
+    if (f.nice) p.set('dep', 1);
+    if (f.voice) p.set('voice', 1);
+    if (!f.open) p.set('all', 1);
+    if (f.sort !== 'goi-y') p.set('sort', f.sort);
+    history.replaceState(null, '', p.toString() ? `?${p}` : location.pathname);
+  }
+  function readUrl() {
+    const p = new URLSearchParams(location.search);
+    const list = (k) => (p.get(k) || '').split(',').filter(Boolean);
+    const tick = (name, values) => document.querySelectorAll(`input[name="${name}"]`).forEach((i) => { i.checked = values.includes(i.value); });
+    $('q').value = p.get('q') || '';
+    tick('tag', list('tags'));
+    tick('gender', [p.get('g') || '']);
+    tick('region', list('r'));
+    tick('carrier', list('c'));
+    $('fPrice').value = p.get('price') || '';
+    $('fRating').value = p.get('rating') || '0';
+    $('fNice').checked = p.has('dep');
+    $('fVoice').checked = p.has('voice');
+    $('fOpen').checked = !p.has('all');
+    $('sort').value = p.get('sort') || 'goi-y';
+  }
+
+  const SORTS = {
+    'goi-y': (a, b) => recommendedScore(b) - recommendedScore(a),
+    'danh-gia': (a, b) => (b.rating || 0) - (a.rating || 0) || b.ratingCount - a.ratingCount,
+    'nhieu-nhat': (a, b) => b.completedCount - a.completedCount,
+    'gia': (a, b) => a.fromPrice - b.fromPrice,
+    'moi': (a, b) => (b.joinedAt || 0) - (a.joinedAt || 0),
+  };
+
+  let everyone = [];
+
+  function matches(fl, f) {
+    const hay = [fl.name, fl.bio, ...fl.voiceTags, fl.numberNote].join(' ').toLowerCase();
+    return (!f.q || hay.includes(f.q))
+      && f.tags.every((t) => fl.voiceTags.includes(t))
+      && (!f.gender || fl.gender === f.gender)
+      && (!f.regions.length || f.regions.includes(fl.region))
+      && (!f.carriers.length || f.carriers.includes(fl.carrier))
+      && (!f.maxPrice || fl.fromPrice <= f.maxPrice)
+      && (fl.rating || 0) >= f.minRating
+      && (!f.nice || isNiceNumber(fl))
+      && (!f.voice || fl.hasVoiceDemo)
+      && (!f.open || fl.accepting);
+  }
+
+  function activeCount(f) {
+    return [f.q, f.tags.length, f.gender, f.regions.length, f.carriers.length, f.maxPrice, f.minRating, f.nice, f.voice, !f.open].filter(Boolean).length;
+  }
+
+  function render() {
+    const f = readFilters();
+    writeUrl(f);
+    const n = activeCount(f);
+    $('filterCount').textContent = n ? `(${n})` : '';
+    if (!everyone.length) {
+      $('resultCount').textContent = '';
+      $('grid').innerHTML = `<div class="empty sm:col-span-2 xl:col-span-3"><strong>Chưa có người nói hộ nào</strong>Hãy là người đầu tiên nhận đơn. <a class="accent underline" href="freelancer.html">Tạo hồ sơ người nói hộ</a></div>`;
+      return;
+    }
+    const list = everyone.filter((fl) => matches(fl, f)).sort(SORTS[f.sort] || SORTS['goi-y']);
+    $('resultCount').textContent = list.length ? `${list.length} người phù hợp` : '';
+    $('grid').innerHTML = list.length
+      ? list.map(freelancerCard).join('')
+      : `<div class="empty sm:col-span-2 xl:col-span-3"><strong>Không có ai khớp bộ lọc</strong>Thử bỏ bớt vài tiêu chí. <button type="button" class="accent underline" data-reset>Xoá bộ lọc</button></div>`;
+    wireVoiceButtons($('grid'));
+    const again = $('grid').querySelector('[data-reset]');
+    if (again) again.onclick = reset;
+  }
+
+  function reset() {
+    history.replaceState(null, '', location.pathname);
+    readUrl();
+    render();
+  }
+
+  document.querySelectorAll('#tagChips input, #filters input, #filters select, #sort').forEach((el) => el.addEventListener('change', render));
+  $('q').addEventListener('input', render);
+  $('reset').onclick = reset;
+
+  readUrl();
+  try {
+    everyone = await api.freelancers.list();
+    render();
+  } catch (e) {
+    $('grid').innerHTML = `<div class="empty sm:col-span-2 xl:col-span-3"><strong>Không tải được danh sách</strong>${esc(e.message)}. <button type="button" class="accent underline" onclick="location.reload()">Thử lại</button></div>`;
+  }
+</script>
+</body>
+</html>
