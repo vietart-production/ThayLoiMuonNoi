@@ -3,8 +3,14 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-// Frontend now lives on Firebase Hosting, a different origin — only it may call this API.
-app.use(cors({ origin: ['https://thayloimuonnoi-8d725.web.app', 'https://thayloimuonnoi-8d725.firebaseapp.com'] }));
+// Frontend lives on Firebase Hosting, a different origin — only it (plus local dev via
+// VS Code's Live Server, default port 5500) may call this API.
+app.use(cors({ origin: [
+  'https://thayloimuonnoi-8d725.web.app',
+  'https://thayloimuonnoi-8d725.firebaseapp.com',
+  'http://127.0.0.1:5500',
+  'http://localhost:5500',
+] }));
 app.use(express.json());
 app.get('/healthz', (req, res) => res.send('ok'));
 
