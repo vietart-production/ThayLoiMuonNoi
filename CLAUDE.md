@@ -26,7 +26,7 @@ Split deployment, two different origins:
 ## Pages
 
 - `index.html` — Noel-themed marketing landing page. Has its own illustrative price calculator (separate inline JS, not wired to real orders) — don't conflate it with the real pricing logic in `src/db.js` (`calcPrice`).
-- `dat-don.html` — buyer flow: browse freelancers, write a script, pay from wallet (escrow via payOS), confirm/dispute/rate after the call.
+- `dat-don.html` — buyer flow: browse/filter freelancers (client-side — the list is fetched in full, no filter endpoint), write a script and the callee's phone number, pay from wallet (escrow via payOS), confirm/dispute/rate after the call.
 - `freelancer.html` — freelancer flow: self-rated profile, handle assigned orders, request withdrawals.
 - `admin.html` — CSKH/admin: script moderation, dispute resolution, withdrawal approval, callee reports. Access is gated server-side by `ADMIN_PHONE_NUMBERS` (an env var on Render, checked in `src/authMiddleware.js`'s `requireAdmin`) — there's no separate admin login UI, just the same Firebase phone sign-in as everyone else.
 - `report.html` — public, no-login form for a callee (the person who received a call) to report it.

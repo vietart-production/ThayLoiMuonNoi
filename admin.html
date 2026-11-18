@@ -154,6 +154,7 @@
       ? list.map((o) => `
         <div class="card p-4">
           <p class="font-semibold text-sm">Đơn ${o.id.slice(-6)} · ${o.price.toLocaleString('vi-VN')}đ</p>
+          <p class="faint text-xs mt-1">Gọi tới: ${esc(o.calleePhone || 'không rõ')}</p>
           <p class="faint text-xs mt-1">Lý do: ${esc(o.disputeReason)}</p>
           <p class="faint text-xs">Có ghi âm lúc báo xong cuộc gọi: ${o.hasRecording ? 'Có' : 'Không'}</p>
           <div class="mt-3 flex gap-2">

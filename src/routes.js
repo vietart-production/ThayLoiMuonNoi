@@ -104,10 +104,11 @@ router.post('/withdrawals', (req, res) => {
 // ---- Buyer orders ----
 router.get('/orders/mine', (req, res) => send(db.listOrdersByBuyer(req.phone), res));
 router.post('/orders', (req, res) => {
-  const { freelancerPhone, script, chars, duration, speed, emotion, timing } = req.body || {};
+  const { freelancerPhone, script, chars, duration, speed, emotion, timing, calleePhone } = req.body || {};
   send(db.createOrder({
     buyerPhone: req.phone,
     freelancerPhone,
+    calleePhone,
     script,
     chars: Number(chars),
     duration: Number(duration),

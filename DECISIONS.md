@@ -35,6 +35,7 @@ Nền tảng marketplace 2 chiều cho thuê người gọi điện thoại nói
 
 ## 5. Bằng chứng & đóng đơn
 
+- **Số điện thoại người được gọi (callee) là trường bắt buộc khi đặt đơn** — trước đây bị thiếu hoàn toàn (cả `dat-don.html` lẫn `src/db.js`), nghĩa là người nói hộ nhận đơn có kịch bản và giá nhưng không biết gọi cho ai. Buyer nhập ở bước viết lời nhắn, chuẩn hóa về E.164 giống số đăng nhập (`toE164` trong `assets/firebase-client.js`, nay export dùng chung). Người nói hộ chỉ thấy số này khi đơn đã `da_duyet_cho_goi` — cùng quy ước đang áp dụng cho nội dung kịch bản đầy đủ (ẩn/hiện xử lý ở client, API vẫn trả nguyên dữ liệu, không có lớp gate ở server). Đơn tạo trước thời điểm này không có trường này; `toLocalPhone` xử lý rỗng bằng "không rõ" thay vì lỗi.
 - Kiểm duyệt kịch bản (script) trước khi gọi.
 - Ghi âm cuộc gọi làm bằng chứng mặc định.
 - Nếu lỡ không ghi âm được: tick "yêu cầu người thuê xác nhận" — hợp lệ khi buyer (a) xác nhận đã đạt mục đích, hoặc (b) có mặt nghe trực tiếp lúc gọi diễn ra, hoặc (c) hỏi lại người được gọi sau đó.

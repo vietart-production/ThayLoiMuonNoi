@@ -17,13 +17,18 @@ const auth = getAuth(app);
  * like "849123456" resolve the only way that works: as local 0849123456 (084 is a real
  * mobile prefix) rather than as +84 followed by seven digits.
  */
-function toE164(input) {
+export function toE164(input) {
   const digits = String(input).replace(/[\s.()-]/g, '').replace(/^00/, '+');
   const m = digits.match(/^(?:\+?84)?0?(\d{9,10})$/);
   return m ? '+84' + m[1] : null;
 }
 
-const local = (e164) => e164.replace(/^\+84/, '0');
+// Exported alongside toE164: both the order form (callee's number) and the freelancer's
+// order list (showing it back) need the same two conversions login already does.
+// Orders placed before calleePhone existed have no value here, so this must tolerate
+// missing input rather than throw and take down the whole order list with it.
+export const toLocalPhone = (e164) => e164 ? e164.replace(/^\+84/, '0') : 'không rõ';
+const local = toLocalPhone;
 
 /*
  * TEMPORARY: real Firebase Phone Auth (signInWithPhoneNumber + RecaptchaVerifier) needs

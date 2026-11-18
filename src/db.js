@@ -132,7 +132,14 @@ async function listAllFreelancers() {
 }
 
 // ---- Orders ----
-async function createOrder({ buyerPhone, freelancerPhone, script, chars, duration, speed, emotion, timing }) {
+async function createOrder({ buyerPhone, freelancerPhone, script, chars, duration, speed, emotion, timing, calleePhone }) {
+  // The whole product is "freelancer calls a third party" — without this, the freelancer
+  // has a script and a price but no one to dial. The frontend normalises to E.164 and
+  // only reveals it to the freelancer after moderation (same gate as the full script);
+  // this is just defense in depth against a client that skips that normalisation.
+  calleePhone = String(calleePhone || '').trim();
+  if (!/\d{8,}/.test(calleePhone)) throw new Error('Nhập số điện thoại của người sẽ nhận cuộc gọi.');
+
   const freelancer = await getFreelancer(freelancerPhone);
   if (!freelancer) throw new Error('Người nói hộ không tồn tại.');
   if (freelancer.blocked) throw new Error('Người nói hộ này đã bị khóa, không thể đặt đơn.');
@@ -151,6 +158,7 @@ async function createOrder({ buyerPhone, freelancerPhone, script, chars, duratio
       id: orderRef.id,
       buyerPhone,
       freelancerPhone,
+      calleePhone,
       script,
       chars,
       duration,

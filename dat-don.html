@@ -52,12 +52,30 @@
 
     <section class="mb-8">
       <h2 class="font-bold text-lg mb-3">1. Chọn người nói hộ</h2>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <input id="fSearch" type="text" placeholder="Tìm theo tên, giọng, loại số…" class="flex-1 min-w-[12rem]">
+        <select id="fCarrier" aria-label="Lọc theo nhà mạng">
+          <option value="">Mọi nhà mạng</option>
+          <option>Viettel</option><option>Mobifone</option><option>Vinaphone</option><option>Vietnamobile</option>
+        </select>
+        <select id="fRating" aria-label="Lọc theo đánh giá tối thiểu">
+          <option value="0">Mọi đánh giá</option>
+          <option value="4">Từ 4 ★</option>
+          <option value="4.5">Từ 4.5 ★</option>
+        </select>
+        <select id="fSort" aria-label="Sắp xếp">
+          <option value="rating">Đánh giá cao nhất</option>
+          <option value="price">Giá thấp nhất</option>
+        </select>
+      </div>
       <div id="freelancerList" class="grid sm:grid-cols-2 md:grid-cols-4 gap-4"><p class="faint text-sm">Đang tải…</p></div>
     </section>
 
     <section class="card p-5 mb-8">
       <h2 class="font-bold text-lg mb-1">2. Viết lời nhắn và tính giá</h2>
       <p id="selectedFreelancerNote" class="faint text-sm mb-3">Chưa chọn người nói hộ ở bước 1.</p>
+      <label for="calleePhone">Số điện thoại của người ấy</label>
+      <input id="calleePhone" type="tel" inputmode="numeric" maxlength="20" class="w-full mt-1 mb-4" placeholder="0901234567 hoặc +84901234567">
       <label for="script">Lời bạn muốn gửi</label>
       <textarea id="script" rows="4" maxlength="2000" class="w-full mt-1 mb-4" placeholder="Viết đúng điều bạn muốn người nói hộ nói với người ấy…"></textarea>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
@@ -132,7 +150,7 @@
 </div>
 
 <script type="module">
-  import { mountAuthWidget } from './assets/firebase-client.js';
+  import { mountAuthWidget, toE164, toLocalPhone } from './assets/firebase-client.js';
   import { api } from './assets/api-client.js';
   import { esc, toast, guard, STATUS_TONE, initials } from './assets/ui.js';
 
@@ -181,12 +199,37 @@
     drawFreelancers();
   }
 
+  // Filtered client-side: the list is already fetched in full and small (a marketplace
+  // of freelancers, not orders), so a second endpoint just for filtering would be work
+  // for no benefit.
+  function filteredFreelancers() {
+    const q = $('fSearch').value.trim().toLowerCase();
+    const carrier = $('fCarrier').value;
+    const minRating = Number($('fRating').value);
+    const sort = $('fSort').value;
+    let list = freelancers.filter((f) =>
+      (!q || [f.name, f.voiceType, f.numberType, f.voiceNote].some((s) => (s || '').toLowerCase().includes(q))) &&
+      (!carrier || f.carrier === carrier) &&
+      (f.rating || 0) >= minRating
+    );
+    list = sort === 'price'
+      ? list.slice().sort((a, b) => a.priceMultiplier - b.priceMultiplier)
+      : list.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.ratingCount || 0) - (a.ratingCount || 0));
+    return list;
+  }
+  ['fSearch', 'fCarrier', 'fRating', 'fSort'].forEach((id) => $(id).addEventListener('input', drawFreelancers));
+
   function drawFreelancers() {
     if (!freelancers.length) {
       $('freelancerList').innerHTML = '<p class="faint text-sm sm:col-span-2 md:col-span-4">Chưa có người nói hộ nào đăng ký. Muốn thử? <a class="underline accent" href="freelancer.html">Tạo hồ sơ người nói hộ</a>.</p>';
       return;
     }
-    $('freelancerList').innerHTML = freelancers.map((f) => {
+    const visible = filteredFreelancers();
+    if (!visible.length) {
+      $('freelancerList').innerHTML = '<p class="faint text-sm sm:col-span-2 md:col-span-4">Không có người nói hộ nào khớp bộ lọc. Thử nới bớt tiêu chí.</p>';
+      return;
+    }
+    $('freelancerList').innerHTML = visible.map((f) => {
       const selected = f.phone === selectedFreelancerPhone;
       return `
       <div class="card p-4 flex flex-col ${selected ? 'selected' : ''}">
@@ -260,10 +303,13 @@
 
   $('submitOrder').onclick = guard(async () => {
     if (!getSelectedFreelancer()) throw new Error('Chọn một người nói hộ ở bước 1 trước.');
+    const calleePhone = toE164($('calleePhone').value);
+    if (!calleePhone) throw new Error('Nhập đúng số điện thoại của người sẽ nhận cuộc gọi.');
     const script = $('script').value.trim();
     if (!script) throw new Error('Viết lời bạn muốn gửi trước khi đặt đơn.');
     await api.orders.create({
       freelancerPhone: selectedFreelancerPhone,
+      calleePhone,
       script,
       chars: script.length,
       duration: Number($('duration').value),
@@ -271,6 +317,7 @@
       emotion: Number($('emotion').value),
       timing: Number($('timing').value),
     });
+    $('calleePhone').value = '';
     $('script').value = '';
     recalc();
     await renderWallet();
@@ -313,7 +360,7 @@
           <div class="flex justify-between items-start gap-3 flex-wrap">
             <div class="min-w-0">
               <p class="font-semibold text-sm">${esc(f ? f.name : o.freelancerPhone)} · ${vnd(o.price)}</p>
-              <p class="faint text-xs mt-0.5">${new Date(o.createdAt).toLocaleString('vi-VN')}</p>
+              <p class="faint text-xs mt-0.5">Gọi tới ${esc(toLocalPhone(o.calleePhone))} · ${new Date(o.createdAt).toLocaleString('vi-VN')}</p>
             </div>
             <span class="status-pill ${STATUS_TONE[o.status] || ''}">${STATUS_LABEL[o.status] || o.status}</span>
           </div>
