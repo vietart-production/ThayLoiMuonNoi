@@ -198,7 +198,11 @@
       await loadMe();
       showTab(me ? 'orders' : 'profile');
       await Promise.all([renderOrders(), renderWithdrawHistory(), renderOwnVoice()]);
-    } catch (e) { toast(e.message, true); }
+    } catch (e) {
+      toast(e.message, true);
+      // Don't leave a skeleton spinning forever over a request that already failed.
+      $('orderGroups').innerHTML = `<div class="empty"><strong>Không tải được đơn</strong>${esc(e.message)} <button type="button" class="underline" onclick="location.reload()">Thử lại</button></div>`;
+    }
   } });
 
   async function loadMe() {

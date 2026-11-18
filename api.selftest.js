@@ -64,7 +64,12 @@ const sortKey = (v) => (v instanceof Timestamp ? v.toMillis() : v);
 function query(col, filters = [], order = null, max = Infinity) {
   return {
     where: (f, op, v) => { assert.equal(op, '==', 'fake only supports =='); return query(col, [...filters, [f, v]], order, max); },
-    orderBy: (f, dir = 'asc') => query(col, filters, [f, dir], max),
+    // Real Firestore refuses where(a) + orderBy(b) unless a composite index exists, and this
+    // repo deploys none — so the fake refuses it too, instead of hiding that failure.
+    orderBy: (f, dir = 'asc') => {
+      if (filters.some(([wf]) => wf !== f)) throw new Error(`FAILED_PRECONDITION: where+orderBy(${f}) needs a composite index`);
+      return query(col, filters, [f, dir], max);
+    },
     limit: (n) => query(col, filters, order, n),
     async get() {
       let rows = [...table(col).entries()].filter(([, d]) => filters.every(([f, v]) => d[f] === v));

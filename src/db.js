@@ -538,13 +538,20 @@ async function getOrder(orderId) {
   const snap = await db.collection('orders').doc(orderId).get();
   return snap.exists ? snap.data() : null;
 }
+/*
+ * Newest first, sorted here rather than with .orderBy(): where() on one field plus
+ * orderBy() on another needs a composite index in Firestore, and without one the query
+ * fails outright (FAILED_PRECONDITION) — which is what left the order lists spinning.
+ * ponytail: reads one person's whole list; add the index + orderBy/limit if a single
+ * account ever has thousands of orders.
+ */
+const newestFirst = (snap) => snap.docs.map((d) => d.data()).sort((a, b) => millis(b.createdAt) - millis(a.createdAt));
+
 async function listOrdersByBuyer(phone) {
-  const snap = await db.collection('orders').where('buyerPhone', '==', phone).orderBy('createdAt', 'desc').get();
-  return snap.docs.map((d) => d.data());
+  return newestFirst(await db.collection('orders').where('buyerPhone', '==', phone).get());
 }
 async function listOrdersByFreelancer(phone) {
-  const snap = await db.collection('orders').where('freelancerPhone', '==', phone).orderBy('createdAt', 'desc').get();
-  return snap.docs.map((d) => d.data());
+  return newestFirst(await db.collection('orders').where('freelancerPhone', '==', phone).get());
 }
 async function listPendingReview() {
   const snap = await db.collection('orders').where('status', '==', STATUS.PENDING_REVIEW).get();
@@ -596,8 +603,7 @@ async function listPendingWithdrawals() {
   return snap.docs.map((d) => d.data());
 }
 async function listWithdrawalsByFreelancer(phone) {
-  const snap = await db.collection('withdrawals').where('phone', '==', phone).orderBy('createdAt', 'desc').get();
-  return snap.docs.map((d) => d.data());
+  return newestFirst(await db.collection('withdrawals').where('phone', '==', phone).get());
 }
 
 // ---- Callee reports ----

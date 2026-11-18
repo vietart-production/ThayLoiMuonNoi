@@ -189,7 +189,11 @@
     try {
       await Promise.all([renderWallet(), pickedId ? loadPicked() : showPrompt()]);
       await renderOrders();
-    } catch (e) { toast(e.message, true); }
+    } catch (e) {
+      toast(e.message, true);
+      // Don't leave a skeleton spinning forever over a request that already failed.
+      $('orderList').innerHTML = `<div class="empty"><strong>Không tải được đơn</strong>${esc(e.message)} <button type="button" class="underline" onclick="location.reload()">Thử lại</button></div>`;
+    }
   } });
 
   async function renderWallet() {
