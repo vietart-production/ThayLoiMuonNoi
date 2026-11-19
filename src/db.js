@@ -107,14 +107,45 @@ async function verifySimulatedOtp(phone, code) {
   return auth.createCustomToken(user.uid);
 }
 
+/*
+ * Every account has a name from its first moment, so nothing ever has to say "no name yet".
+ * The default is 8 random letters and digits (no 0/o/1/l/i, which get misread), and is
+ * reserved in `usernames/{name}` inside a transaction so two accounts can never draw the
+ * same one. Names a person types themselves are not reserved: they are private (see
+ * accountView), and "Minh" being taken would only be an annoyance.
+ * ponytail: a default stays reserved after its owner renames — 31^8 ≈ 8.5e11 of them.
+ */
+const NAME_CHARS = 'abcdefghjkmnpqrstuvwxyz23456789';
+const randomName = () => Array.from({ length: 8 }, () => NAME_CHARS[crypto.randomInt(NAME_CHARS.length)]).join('');
+
+async function claimDefaultName(phone) {
+  for (let i = 0; i < 10; i++) {
+    const name = randomName();
+    const claim = db.collection('usernames').doc(name);
+    const won = await db.runTransaction(async (tx) => {
+      if ((await tx.get(claim)).exists) return false;
+      tx.set(claim, { phone });
+      return true;
+    });
+    if (won) return name;
+  }
+  throw new Error('Không tạo được tên mặc định, vui lòng thử lại.');
+}
+
 async function ensureUser(phone) {
   const ref = db.collection('users').doc(phone);
   const snap = await ref.get();
   if (!snap.exists) {
-    await ref.set({ phone, walletBalance: 0, createdAt: FieldValue.serverTimestamp() });
-    return { phone, walletBalance: 0 };
+    const name = await claimDefaultName(phone);
+    await ref.set({ phone, name, walletBalance: 0, createdAt: FieldValue.serverTimestamp() });
+    return { phone, name, walletBalance: 0 };
   }
-  return snap.data();
+  const user = snap.data();
+  if (user.name) return user;
+  // Older accounts, and ones a wallet credit created before anything else did, have no name yet.
+  const name = await claimDefaultName(phone);
+  await ref.set({ name }, { merge: true });
+  return { ...user, name };
 }
 
 async function getWallet(phone) {
@@ -129,16 +160,18 @@ async function getWallet(phone) {
 // any view another person gets (buyerOrderView / freelancerOrderView don't carry it).
 // The phone comes from the doc id, not the doc: a wallet credit can create a users doc
 // that carries only walletBalance.
-const accountView = (phone, u) => ({ phone, name: u.name || '', createdAt: u.createdAt || null });
+const accountView = (phone, u) => ({ phone, name: u.name, createdAt: u.createdAt || null });
 
 async function getAccount(phone) {
   return accountView(phone, await ensureUser(phone));
 }
 
 async function updateAccount(phone, input = {}) {
+  const name = text(input.name, 40);
+  if (!name) throw new Error('Tên không được để trống.');
   await ensureUser(phone);
   const ref = db.collection('users').doc(phone);
-  await ref.set({ name: text(input.name, 40) }, { merge: true });
+  await ref.set({ name }, { merge: true });
   return accountView(phone, (await ref.get()).data());
 }
 

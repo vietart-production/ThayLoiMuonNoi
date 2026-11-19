@@ -218,7 +218,8 @@ const check = (name) => checks.push(name);
 
   // 4b. Account: the name is the one thing a request can set; the money on the same doc is not.
   const acct0 = await ok('GET', '/me', { as: B1 });
-  assert.equal(acct0.phone, B1); assert.equal(acct0.name, ''); assert.ok(!('walletBalance' in acct0));
+  assert.equal(acct0.phone, B1); assert.ok(!('walletBalance' in acct0));
+  assert.match(acct0.name, /^[a-z2-9]{8}$/, 'a new account starts with a random letters-and-digits name');
   const acct1 = await ok('POST', '/me', { as: B1, body: { name: '  Minh ' + 'x'.repeat(60), walletBalance: 999999, phone: '+84000' } });
   assert.equal(acct1.name.length, 40); assert.ok(acct1.name.startsWith('Minh')); assert.equal(acct1.phone, B1);
   assert.equal(await balance(B1), 100000);
@@ -227,8 +228,16 @@ const check = (name) => checks.push(name);
   const B2 = '+84944444444';
   const t2 = await ok('POST', '/wallet/topup-link', { as: B2, body: { amount: 20000 } });
   await webhook({ orderCode: t2.orderCode, amount: 20000 });
-  assert.equal((await ok('GET', '/me', { as: B2 })).phone, B2);
-  check('account name editable, trimmed and capped; balance and phone untouched');
+  const acct2 = await ok('GET', '/me', { as: B2 });
+  assert.equal(acct2.phone, B2);
+  assert.match(acct2.name, /^[a-z2-9]{8}$/, 'a nameless legacy account is given one on first read');
+  // Defaults are reserved, so they cannot repeat; and a name can't be blanked out again.
+  const seen = new Set([acct0.name, acct2.name]);
+  for (let i = 0; i < 30; i++) seen.add((await ok('GET', '/me', { as: '+84966000' + String(100 + i) })).name);
+  assert.equal(seen.size, 32, 'default names must be unique');
+  await fails(400, 'POST', '/me', { as: B1, body: { name: '   ' } });
+  assert.equal((await ok('GET', '/me', { as: B1 })).name, acct1.name);
+  check('every account has a unique default name; editable, trimmed, capped, never blank; balance and phone untouched');
   const long = 'a'.repeat(400);
   const spoofed = await ok('POST', '/orders', { as: B1, body: order({ script: long, chars: 1 }) });
   assert.equal(spoofed.price, 30000); // 400 chars → 20 × 1000đ, × 1.5 — the client's "chars: 1" is ignored
