@@ -77,24 +77,11 @@
   }
   .hero-wrap > header, .hero-wrap > section{ position:relative; z-index:1; }
 
-  /* Phones and small tablets. The photo is 1846:852 and its height follows its width, but
-     the hero's text stacks into one column and is far taller than that — so with the photo
-     pinned behind it, most of the hero sat on bare --bg-deep. Instead the photo goes into
-     the flow as a banner at its own ratio (never cropped), the text follows underneath and
-     overlaps its lower edge a little, and the photo's bottom fades into --bg-deep, the same
-     colour as the background, so there is no seam. The nav wraps to two rows on a phone and
-     would hide half of a banner this short, so it sits above the photo, not on it (the DOM
-     order is photo, header, text, hence the explicit rows). 768px = Tailwind's md. */
-  @media (max-width:767.98px){
-    .hero-wrap{ display:grid; grid-template-columns:minmax(0,1fr); }
-    .hero-wrap > header{ grid-row:1; }
-    .hero-photo{ position:relative; grid-row:2; }
-    .hero-photo::after{
-      content:""; position:absolute; inset:0; pointer-events:none;
-      background:linear-gradient(180deg, rgba(42,18,6,0) 78%, var(--bg-deep) 100%);
-    }
-    .hero-wrap > section{ grid-row:3; width:100%; margin-top:-28px; }
-  }
+
+  /* Phones: the photo is a banner in the flow, at its own 1846:852 ratio (so never cropped),
+     instead of sitting behind the text. It comes after the header in the markup so the nav
+     stays on top. 768px = Tailwind's md; from there up the photo stays pinned behind. */
+  @media (max-width:767.98px){ .hero-photo{ position:relative; } }
 
   .divider{display:flex; align-items:center; gap:14px; max-width:420px; margin:0 auto;}
   .divider::before,.divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);}
@@ -145,7 +132,6 @@
 <audio id="bgMusic" src="assets/bg-music.mp3" loop preload="auto"></audio>
 
 <div class="hero-wrap">
-  <div class="hero-photo" aria-hidden="true"></div>
   <!-- Nav -->
   <header class="sticky top-0 z-50 border-b" style="border-color:rgba(255,255,255,.12); background:rgba(16,10,7,.4); backdrop-filter:blur(10px);">
     <nav class="max-w-6xl mx-auto px-5 py-3 md:py-0 md:h-16 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -192,9 +178,10 @@
       <a href="#an-toan" style="color:var(--ink-dim);">An toàn</a>
     </div>
   </header>
+  <div class="hero-photo" aria-hidden="true"></div>
 
   <!-- Hero -->
-  <section id="top" class="relative max-w-6xl mx-auto px-5 pt-16 pb-10 md:pb-32 grid md:grid-cols-2 gap-10 items-center">
+  <section id="top" class="relative max-w-6xl mx-auto px-5 pt-16 pb-24 md:pb-32 grid md:grid-cols-2 gap-10 items-center">
     <div>
       <span class="badge-noel inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wide px-4 py-1.5 rounded-full">
         <span style="font-size:14px;">🎄</span>
@@ -283,7 +270,7 @@
 <div class="divider"><svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gold)"><path d="M12 2l1.8 5.6L19.5 9l-5.7 1.4L12 16l-1.8-5.6L4.5 9l5.7-1.4L12 2Z"/></svg></div>
 
 <!-- Cách hoạt động -->
-<section id="cach-hoat-dong" class="max-w-6xl mx-auto px-5 pt-8 pb-12 md:py-16">
+<section id="cach-hoat-dong" class="max-w-6xl mx-auto px-5 py-16">
   <h2 class="text-2xl md:text-3xl font-bold text-center display">Cách hoạt động</h2>
   <p class="mt-2 text-center max-w-xl mx-auto" style="color:var(--ink-dim);">Ba bước đơn giản, tiền của bạn luôn được giữ an toàn tới khi xong việc.</p>
   <div class="mt-10 grid md:grid-cols-3 gap-6">
