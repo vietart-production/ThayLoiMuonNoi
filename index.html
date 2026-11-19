@@ -167,10 +167,22 @@
           <path d="M1 21h14c1.2 0 2.2 1 2.2 2.2H1.2C.5 23.2 0 22.6 0 22c0-.4.3-.8.7-1Z" fill="#fff"/>
         </svg>
         <span style="font-size:14px;">🎁</span>
-        Đặt một cuộc gọi
+        <span class="hidden sm:inline">Đặt một cuộc gọi</span>
+        <span class="sm:hidden">Đặt</span>
       </a>
+      <button id="navToggle" class="md:hidden grid place-items-center w-9 h-9 rounded-full" style="border:1.5px solid rgba(232,180,92,.4); color:var(--gold-bright);" aria-label="Mở menu" aria-expanded="false">
+        <svg id="navIconOpen" width="17" height="12" viewBox="0 0 17 12" fill="none"><path d="M0 1h17M0 6h17M0 11h17" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <svg id="navIconClose" width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:none;"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
       </div>
     </nav>
+    <div id="navMobile" class="md:hidden hidden border-t px-5 py-3 flex flex-col gap-3 text-sm font-medium" style="border-color:rgba(255,255,255,.12); background:rgba(16,10,7,.75);">
+      <a href="#cach-hoat-dong" style="color:var(--ink-dim);">Cách hoạt động</a>
+      <a href="#dat-don" style="color:var(--ink-dim);">Tính giá</a>
+      <a href="nguoi-noi-ho.html" style="color:var(--ink-dim);">Người nói hộ</a>
+      <a href="dat-don.html" style="color:var(--ink-dim);">Đơn của tôi</a>
+      <a href="#an-toan" style="color:var(--ink-dim);">An toàn</a>
+    </div>
   </header>
 
   <!-- Hero -->
@@ -549,6 +561,19 @@
   import { api } from './assets/api-client.js';
   import { freelancerCard, wireVoiceButtons, recommendedScore } from './assets/catalog.js';
   mountAuthWidget();
+
+  // Mobile nav: the md:flex link row is display:none below that breakpoint, so this
+  // dropdown is the only way to reach those links on a phone.
+  const navToggle = document.getElementById('navToggle');
+  const navMobile = document.getElementById('navMobile');
+  function setNavOpen(open) {
+    navMobile.classList.toggle('hidden', !open);
+    navToggle.setAttribute('aria-expanded', String(open));
+    document.getElementById('navIconOpen').style.display = open ? 'none' : '';
+    document.getElementById('navIconClose').style.display = open ? '' : 'none';
+  }
+  navToggle.addEventListener('click', () => setNavOpen(navMobile.classList.contains('hidden')));
+  navMobile.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setNavOpen(false)));
 
   // The real top four, ranked the same way as "Gợi ý" on nguoi-noi-ho.html.
   const top = document.getElementById('topFreelancers');
