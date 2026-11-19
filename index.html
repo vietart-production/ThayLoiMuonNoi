@@ -75,23 +75,6 @@
     background-size:cover; background-position:center;
     z-index:0;
   }
-  /* A light, uniform amber wash across the whole photo (not just the bottom fade) —
-     the photo is naturally blue-toned (night sky) while everything below the hero is
-     warm amber-brown; this nudges the hero's color temperature closer to that palette
-     so the hue doesn't jump at the seam, without washing out the photo itself. */
-  .hero-photo::after{
-    content:""; position:absolute; inset:0;
-    background:linear-gradient(180deg, rgba(42,18,6,.12) 0%, rgba(42,18,6,.22) 55%, var(--bg-deep) 100%);
-  }
-  /* Guarantees a clean seam into .content-bg below regardless of whether hero-wrap's
-     real height (driven by text content, which varies) is taller or shorter than
-     .hero-photo's own aspect-ratio height — tied to hero-wrap's actual bottom edge
-     instead of the photo's box, so it can't end up skipped. */
-  .hero-wrap::after{
-    content:""; position:absolute; left:0; right:0; bottom:0; height:220px;
-    background:linear-gradient(180deg, transparent, var(--bg-deep));
-    pointer-events:none;
-  }
   .hero-wrap > header, .hero-wrap > section{ position:relative; z-index:1; }
 
   .divider{display:flex; align-items:center; gap:14px; max-width:420px; margin:0 auto;}
@@ -232,7 +215,7 @@
           Trở thành người nói hộ
         </a>
       </div>
-      <div class="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm" style="color:rgba(255,255,255,.75);">
+      <div class="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium" style="color:rgba(255,255,255,.92); text-shadow:0 1px 3px rgba(0,0,0,.85), 0 0 12px rgba(0,0,0,.6);">
         <span class="inline-flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-bright)" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3 4 6v6c0 5 3.5 7.5 8 9 4.5-1.5 8-4 8-9V6l-8-3Z"/></svg>Kịch bản được kiểm duyệt trước</span>
         <span class="inline-flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-bright)" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path stroke-linecap="round" d="M12 17.5v2.5M12 4v2"/></svg>Ghi âm làm bằng chứng</span>
         <span class="inline-flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-bright)" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path stroke-linecap="round" d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Hoàn tiền nếu không đạt mục đích</span>
