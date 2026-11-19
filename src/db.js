@@ -108,23 +108,49 @@ async function verifySimulatedOtp(phone, code) {
 }
 
 /*
- * Every account has a name from its first moment, so nothing ever has to say "no name yet".
- * The default is 8 random letters and digits (no 0/o/1/l/i, which get misread), and is
- * reserved in `usernames/{name}` inside a transaction so two accounts can never draw the
- * same one. Names a person types themselves are not reserved: they are private (see
- * accountView), and "Minh" being taken would only be an annoyance.
- * ponytail: a default stays reserved after its owner renames — 31^8 ≈ 8.5e11 of them.
+ * Every account has a name from its first moment, so nothing ever has to say "no name yet",
+ * and the name is the person's public handle: a freelancer is listed and found by it. That
+ * makes it unique. Each name is reserved in usernames/{key}, written inside the same
+ * transaction that checks it, so two people can't take one at once; renaming releases the
+ * old one.
+ *
+ * The key folds case, accents and đ, so "Minh Thư" and "minh thu" are the same name —
+ * otherwise anyone could pose as someone by dropping a diacritic.
+ * ponytail: no reserved words (admin, cskh…) yet; add a list to nameProblem() if that bites.
  */
+const NAME_RE = /^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u;
+const nameKey = (name) => name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase();
+
+// Returns { name } if acceptable, else { reason } — the same words the sign-up box shows.
+function checkNameShape(raw) {
+  const name = String(raw ?? '').trim().replace(/\s+/g, ' ');
+  if (!name) return { reason: 'Nhập tên của bạn.' };
+  if (name.length < 3) return { reason: 'Tên cần ít nhất 3 ký tự.' };
+  if (name.length > 40) return { reason: 'Tên tối đa 40 ký tự.' };
+  if (!NAME_RE.test(name)) return { reason: 'Chỉ dùng chữ, số, dấu cách và . _ - (bắt đầu bằng chữ hoặc số).' };
+  return { name };
+}
+
+// What the live "is this free?" check answers, one keystroke at a time.
+async function checkName(phone, raw) {
+  const shape = checkNameShape(raw);
+  if (!shape.name) return { ok: false, reason: shape.reason };
+  const claim = await db.collection('usernames').doc(nameKey(shape.name)).get();
+  if (claim.exists && claim.data().phone !== phone) return { ok: false, reason: 'Tên này đã có người dùng.' };
+  return { ok: true, name: shape.name };
+}
+
+// Default: 8 random letters and digits, no 0/o/1/l/i (they get misread).
 const NAME_CHARS = 'abcdefghjkmnpqrstuvwxyz23456789';
 const randomName = () => Array.from({ length: 8 }, () => NAME_CHARS[crypto.randomInt(NAME_CHARS.length)]).join('');
 
 async function claimDefaultName(phone) {
   for (let i = 0; i < 10; i++) {
     const name = randomName();
-    const claim = db.collection('usernames').doc(name);
+    const claim = db.collection('usernames').doc(nameKey(name));
     const won = await db.runTransaction(async (tx) => {
       if ((await tx.get(claim)).exists) return false;
-      tx.set(claim, { phone });
+      tx.set(claim, { phone, name });
       return true;
     });
     if (won) return name;
@@ -156,10 +182,8 @@ async function getWallet(phone) {
 // ---- Account: one per phone number, whether the person buys, speaks, or both ----
 
 // Whitelisted like profileFields: the users doc also holds walletBalance, which a request
-// must never be able to touch. The name is private — shown back to its owner, never put in
-// any view another person gets (buyerOrderView / freelancerOrderView don't carry it).
-// The phone comes from the doc id, not the doc: a wallet credit can create a users doc
-// that carries only walletBalance.
+// must never be able to touch. The phone comes from the doc id, not the doc: a wallet
+// credit can create a users doc that carries only walletBalance.
 const accountView = (phone, u) => ({ phone, name: u.name, createdAt: u.createdAt || null });
 
 async function getAccount(phone) {
@@ -167,12 +191,30 @@ async function getAccount(phone) {
 }
 
 async function updateAccount(phone, input = {}) {
-  const name = text(input.name, 40);
-  if (!name) throw new Error('Tên không được để trống.');
-  await ensureUser(phone);
-  const ref = db.collection('users').doc(phone);
-  await ref.set({ name }, { merge: true });
-  return accountView(phone, (await ref.get()).data());
+  const shape = checkNameShape(input.name);
+  if (!shape.name) throw new Error(shape.reason);
+  const { name } = shape;
+  const mine = await ensureUser(phone);
+  const userRef = db.collection('users').doc(phone);
+  const freelancerRef = db.collection('freelancers').doc(phone);
+  const newKey = nameKey(name);
+  const oldKey = nameKey(mine.name);
+  const newClaim = db.collection('usernames').doc(newKey);
+  const oldClaim = db.collection('usernames').doc(oldKey);
+
+  await db.runTransaction(async (tx) => {
+    // All reads before any write, as Firestore requires.
+    const taken = await tx.get(newClaim);
+    const freelancer = await tx.get(freelancerRef);
+    if (taken.exists && taken.data().phone !== phone) throw new Error('Tên này đã có người dùng.');
+    tx.set(newClaim, { phone, name });
+    tx.set(userRef, { name }, { merge: true });
+    // A freelancer's public name is this one; it is copied onto their listing so the browse
+    // page needn't read every user to draw a card.
+    if (freelancer.exists) tx.set(freelancerRef, { name }, { merge: true });
+  });
+  if (oldKey !== newKey) await oldClaim.delete(); // let the old name go, now the new one is safe
+  return accountView(phone, { ...mine, name });
 }
 
 // ---- Topups: payOS webhook credits by orderCode, looked up in `topups/{orderCode}` ----
@@ -215,7 +257,8 @@ async function creditTopup(orderCode, paidAmount) {
 /*
  * The only fields a freelancer may set on their own profile. Everything else on the
  * document — withdrawable, blocked, ratingSum/Count, completedCount, publicId,
- * hasVoiceDemo — is written by the server alone. This used to spread the request body
+ * hasVoiceDemo, and name (that is the account's, unique, and changed via updateAccount) —
+ * is written by the server alone. This used to spread the request body
  * straight into the document, which let any signed-in account set its own balance.
  *
  * Taxonomy values (voice tags, carriers) live in assets/catalog.js. They are only
@@ -223,13 +266,10 @@ async function creditTopup(orderCode, paidAmount) {
  * sender's own profile, and a second copy of the list here would just drift.
  */
 function profileFields(input) {
-  const name = text(input.name, 40);
-  if (!name) throw new Error('Nhập tên hiển thị.');
   const multiplier = Number(input.priceMultiplier);
   if (!(multiplier >= 1 && multiplier <= 5)) throw new Error('Hệ số giá phải từ 1 đến 5.');
   const tags = Array.isArray(input.voiceTags) ? input.voiceTags.map((t) => text(t, 20)).filter(Boolean) : [];
   return {
-    name,
     bio: text(input.bio, 300),
     gender: ['nam', 'nu'].includes(input.gender) ? input.gender : '',
     region: ['bac', 'trung', 'nam'].includes(input.region) ? input.region : '',
@@ -245,7 +285,7 @@ function profileFields(input) {
 
 async function upsertFreelancerProfile(phone, input = {}) {
   const data = profileFields(input);
-  await ensureUser(phone);
+  data.name = (await ensureUser(phone)).name; // the public name is the account's; set it in Hồ sơ của tôi
   const ref = db.collection('freelancers').doc(phone);
   const snap = await ref.get();
   const base = snap.exists
@@ -695,6 +735,7 @@ module.exports = {
   getWallet,
   getAccount,
   updateAccount,
+  checkName,
   createTopupIntent,
   getTopupStatus,
   creditTopup,

@@ -131,6 +131,9 @@ router.use(requireAuth);
 // ---- Account (everyone: buyers and freelancers alike) ----
 router.get('/me', (req, res) => send(db.getAccount(req.phone), res));
 router.post('/me', (req, res) => send(db.updateAccount(req.phone, req.body || {}), res));
+// The live "is this name free?" check, asked as the person types. Signed-in only, so the
+// name list can't be walked anonymously.
+router.get('/names/check', (req, res) => send(db.checkName(req.phone, req.query.name), res));
 
 // ---- Wallet ----
 router.get('/wallet', (req, res) => send(db.getWallet(req.phone).then((balance) => ({ balance })), res));

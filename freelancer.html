@@ -92,7 +92,8 @@
     <section data-panel="profile" class="mt-6 grid lg:grid-cols-[minmax(0,1fr)_20rem] gap-6 items-start" hidden>
       <form id="profileForm" class="card p-6 space-y-5" novalidate>
         <h2 class="font-bold text-lg">Hồ sơ</h2>
-        <label class="field"><span>Tên hiển thị</span><input id="pName" type="text" maxlength="40" required></label>
+        <label class="field"><span>Tên hiển thị</span><input id="pName" type="text" disabled>
+          <span class="hint">Tên công khai của tài khoản bạn — người thuê tìm và thấy bạn bằng tên này. <a class="accent underline" href="tai-khoan.html">Đổi tên ở Hồ sơ của tôi</a></span></label>
         <label class="field"><span>Giới thiệu bản thân</span>
           <textarea id="pBio" rows="4" maxlength="300" placeholder="Giọng bạn thế nào, bạn hợp với những dịp nào, từng nói hộ những gì…"></textarea>
           <span class="hint flex justify-between"><span>Người thuê đọc phần này trước khi chọn.</span><span id="bioCount">0/300</span></span></label>
@@ -211,7 +212,12 @@
     $('stats').hidden = !has;
     $('publicLink').hidden = !has;
     $('acceptWrap').hidden = !has;
-    if (!has) { $('pPhone').value = toLocalPhone(currentPhone()); updateFromPreview(); return; }
+    if (!has) {
+      $('pPhone').value = toLocalPhone(currentPhone());
+      $('pName').value = (await api.me.get()).name; // no profile yet, but the account already has its public name
+      updateFromPreview();
+      return;
+    }
     fillProfile(me);
     const link = new URL(`ho-so.html?id=${encodeURIComponent(me.publicId)}`, location.href).href;
     $('profileLink').href = link;
@@ -272,7 +278,6 @@
   $('profileForm').addEventListener('submit', guard(async () => {
     const first = !me;
     await api.freelancer.saveProfile({
-      name: $('pName').value.trim(),
       bio: $('pBio').value.trim(),
       gender: (document.querySelector('input[name="gender"]:checked') || {}).value || '',
       region: $('pRegion').value,

@@ -25,6 +25,7 @@ export const api = {
   me: {
     get: () => call('/me'),
     save: (name) => call('/me', { httpMethod: 'POST', body: { name } }),
+    checkName: (name) => call(`/names/check?name=${encodeURIComponent(name)}`),
   },
   wallet: {
     get: () => call('/wallet'),

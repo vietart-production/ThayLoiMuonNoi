@@ -17,6 +17,9 @@
   .field > span{display:block; font-size:.82rem; font-weight:600; margin-bottom:.35rem;}
   .field input{width:100%;}
   .avatar-lg{width:4rem; height:4rem; font-size:1.3rem;}
+  #nameStatus{font-weight:500;}
+  .name-ok{color:#7FD3A0;}
+  .name-bad{color:#FF8F86;}
   .section-title{font-family:var(--font-display); font-weight:700; font-size:1.2rem;}
 </style>
 </head>
@@ -55,11 +58,12 @@
       <form id="nameForm" class="mt-5 flex flex-wrap items-end gap-3" novalidate>
         <label class="field flex-1" style="min-width:12rem;">
           <span>Tên hiển thị</span>
-          <input id="nameIn" type="text" maxlength="40" autocomplete="name" required placeholder="Bạn muốn được gọi là gì?">
+          <input id="nameIn" type="text" maxlength="40" autocomplete="off" spellcheck="false" aria-describedby="nameStatus" placeholder="Tên của bạn">
+          <span id="nameStatus" class="hint" role="status" aria-live="polite"></span>
         </label>
-        <button class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold">Lưu</button>
+        <button id="nameSave" class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold" disabled>Lưu</button>
       </form>
-      <p class="hint">Tên mặc định do hệ thống đặt, bạn đổi thành tên mình thích. Chỉ mình bạn thấy tên này. Người nói hộ không bao giờ thấy tên hay số điện thoại của người thuê.</p>
+      <p class="hint">Tên là duy nhất, từ 3 đến 40 ký tự: chữ, số, dấu cách và . _ - . Đây là tên công khai của bạn: nếu bạn nói hộ, mọi người tìm và thấy bạn bằng tên này. Người nói hộ không thấy tên hay số điện thoại của người thuê trên đơn.</p>
     </section>
 
     <!-- As a buyer: every account has a wallet and can order -->
@@ -114,13 +118,42 @@
   function showAccount(a) {
     $('nameOut').textContent = a.name;   // every account has one from the start
     $('nameIn').value = a.name;
+    savedName = a.name; seq++; $('nameSave').disabled = true; setNameStatus('', '');
     $('avatar').textContent = initials(a.name);
     $('sinceOut').textContent = a.createdAt ? `Tham gia từ ${dateOnly(a.createdAt)}` : '';
   }
 
+  // Live check: every keystroke asks the server whether the name is acceptable and free.
+  // Answers to an earlier keystroke are dropped (seq), and Save stays off until the answer
+  // to the latest text is "ok" — the server re-checks on save, so this is a courtesy, not the gate.
+  let savedName = '', seq = 0, timer;
+  function setNameStatus(kind, msg) {
+    const el = $('nameStatus');
+    el.className = 'hint' + (kind ? ' name-' + kind : '');
+    el.textContent = msg;
+  }
+  $('nameIn').addEventListener('input', () => {
+    const typed = $('nameIn').value, mine = ++seq;
+    clearTimeout(timer);
+    $('nameSave').disabled = true;
+    if (typed.trim() === savedName) return setNameStatus('', '');
+    setNameStatus('', 'Đang kiểm tra…');
+    timer = setTimeout(async () => {
+      try {
+        const r = await api.me.checkName(typed);
+        if (mine !== seq) return;
+        $('nameSave').disabled = !r.ok;
+        setNameStatus(r.ok ? 'ok' : 'bad', r.ok ? '✓ Tên này dùng được.' : r.reason);
+      } catch (e) {
+        if (mine === seq) setNameStatus('bad', e.message);
+      }
+    }, 150);
+  });
+
   $('nameForm').addEventListener('submit', guard(async () => {
+    if ($('nameSave').disabled) return;
     showAccount(await api.me.save($('nameIn').value));
-    toast('Đã lưu tên hiển thị.');
+    toast('Đã lưu tên.');
   }));
 
   function showBuyer(balance, orders) {

@@ -172,8 +172,10 @@ const check = (name) => checks.push(name);
   assert.deepEqual(me.voiceTags, ['Ấm áp', 'Truyền cảm']);
   assert.equal(me.fromPrice, 7500); // 100 chars → 5 × 1000đ, × 1.5
   f1Id = me.publicId;
-  await fails(400, 'POST', '/freelancer/profile', { as: F1, body: { name: '', priceMultiplier: 1 } });
-  await fails(400, 'POST', '/freelancer/profile', { as: F1, body: { name: 'x', priceMultiplier: 50 } });
+  await fails(400, 'POST', '/freelancer/profile', { as: F1, body: { priceMultiplier: 50 } });
+  // The public name is the account's: a name sent with the profile is ignored.
+  assert.notEqual(me.name, 'Lan Anh');
+  assert.equal(me.name, (await ok('GET', '/me', { as: F1 })).name);
   check('profile write is whitelisted (balance/rating/blocked/publicId untouched)');
 
   // 2. The public listing never carries a phone number.
@@ -216,28 +218,52 @@ const check = (name) => checks.push(name);
   assert.equal((await ok('GET', `/wallet/topups/${link.orderCode}`, { as: B1 })).status, 'credited');
   check('wallet credited only by a successful, matching payOS webhook, once');
 
-  // 4b. Account: the name is the one thing a request can set; the money on the same doc is not.
+  // 4b. Account names: unique, checked live, public via the freelancer listing.
   const acct0 = await ok('GET', '/me', { as: B1 });
   assert.equal(acct0.phone, B1); assert.ok(!('walletBalance' in acct0));
   assert.match(acct0.name, /^[a-z2-9]{8}$/, 'a new account starts with a random letters-and-digits name');
-  const acct1 = await ok('POST', '/me', { as: B1, body: { name: '  Minh ' + 'x'.repeat(60), walletBalance: 999999, phone: '+84000' } });
-  assert.equal(acct1.name.length, 40); assert.ok(acct1.name.startsWith('Minh')); assert.equal(acct1.phone, B1);
-  assert.equal(await balance(B1), 100000);
   await fails(401, 'GET', '/me');
-  // An account whose users doc was created by a wallet credit alone has no phone field.
+  await fails(401, 'GET', '/names/check?name=Minh');
+
+  // An account whose users doc was created by a wallet credit alone has no phone field and no name.
   const B2 = '+84944444444';
   const t2 = await ok('POST', '/wallet/topup-link', { as: B2, body: { amount: 20000 } });
   await webhook({ orderCode: t2.orderCode, amount: 20000 });
   const acct2 = await ok('GET', '/me', { as: B2 });
   assert.equal(acct2.phone, B2);
   assert.match(acct2.name, /^[a-z2-9]{8}$/, 'a nameless legacy account is given one on first read');
-  // Defaults are reserved, so they cannot repeat; and a name can't be blanked out again.
+
+  // Default names are reserved, so thirty more accounts all draw different ones.
   const seen = new Set([acct0.name, acct2.name]);
   for (let i = 0; i < 30; i++) seen.add((await ok('GET', '/me', { as: '+84966000' + String(100 + i) })).name);
   assert.equal(seen.size, 32, 'default names must be unique');
+
+  // The live check says why, character by character.
+  const chk = (as, name) => ok('GET', '/names/check?name=' + encodeURIComponent(name), { as });
+  assert.deepEqual(await chk(B1, 'Mi'), { ok: false, reason: 'Tên cần ít nhất 3 ký tự.' });
+  assert.equal((await chk(B1, 'Min/h')).ok, false);
+  assert.equal((await chk(B1, '_Minh')).ok, false);
+  assert.equal((await chk(B1, 'x'.repeat(41))).ok, false);
+  assert.equal((await chk(B1, 'Minh Thư')).ok, true);
+
+  // Renaming reserves the new name — folding case, accents and đ — and frees the old one.
+  const acct1 = await ok('POST', '/me', { as: B1, body: { name: '  Minh   Thư ', walletBalance: 999999, phone: '+84000' } });
+  assert.equal(acct1.name, 'Minh Thư'); assert.equal(acct1.phone, B1);
+  assert.equal(await balance(B1), 100000);
+  for (const variant of ['Minh Thư', 'minh thu', 'MINH THƯ']) {
+    assert.deepEqual(await chk(B2, variant), { ok: false, reason: 'Tên này đã có người dùng.' }, variant);
+    await fails(400, 'POST', '/me', { as: B2, body: { name: variant } });
+  }
+  assert.equal((await chk(B1, 'minh thu')).ok, true, 'your own name is never "taken"');
+  assert.equal((await ok('POST', '/me', { as: B1, body: { name: 'Minh Thu' } })).name, 'Minh Thu');
+  assert.equal((await chk(B2, acct0.name)).ok, true, 'the old default name was released');
   await fails(400, 'POST', '/me', { as: B1, body: { name: '   ' } });
-  assert.equal((await ok('GET', '/me', { as: B1 })).name, acct1.name);
-  check('every account has a unique default name; editable, trimmed, capped, never blank; balance and phone untouched');
+  assert.equal((await ok('GET', '/me', { as: B1 })).name, 'Minh Thu');
+
+  // A freelancer is listed under the account name, and follows a rename.
+  assert.equal((await ok('POST', '/me', { as: F1, body: { name: 'Lan Anh' } })).name, 'Lan Anh');
+  assert.equal((await ok('GET', '/freelancers')).find((f) => f.id === f1Id).name, 'Lan Anh');
+  check('names are unique (case/accent-folded), checked live, released on rename, and carry to the freelancer listing');
   const long = 'a'.repeat(400);
   const spoofed = await ok('POST', '/orders', { as: B1, body: order({ script: long, chars: 1 }) });
   assert.equal(spoofed.price, 30000); // 400 chars → 20 × 1000đ, × 1.5 — the client's "chars: 1" is ignored
