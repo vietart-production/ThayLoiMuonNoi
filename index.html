@@ -65,26 +65,21 @@
   .icon-chip-red{background:rgba(194,31,43,.18);}
   .icon-chip-pine{background:rgba(60,107,81,.28);}
 
-  /* Hero photo is locked to its own aspect ratio (1846/852) so background-size:cover
-     never has to crop the sides — the lamppost, tree and garland stay fully in frame
-     at any viewport width. Hero text sits in normal flow above it (z-index:1). */
+  /* The photo fills the hero from the top down to the divider at every width: it is as tall
+     as the hero (top:0; bottom:0), whatever the text makes that, and covers it. Its bottom edge
+     is pinned to the divider (background-position:center bottom), so when the hero is wider than
+     the picture's 1846:852 ratio (very wide screens) the surplus is cropped off the TOP and the
+     scene's ground stays at the divider; when the hero is taller than it (phones, tablets) the
+     picture scales to the hero's height and the SIDES are cropped. Hero text sits in normal flow
+     above it (z-index:1). */
   .hero-wrap{ position:relative; background:var(--bg-deep); }
   .hero-photo{
-    position:absolute; top:0; left:0; width:100%; aspect-ratio:1846/852;
+    position:absolute; top:0; bottom:0; left:0; width:100%;
     background-image:url('assets/bg-noel-village.jpg');
-    background-size:cover; background-position:center;
+    background-size:cover; background-position:center bottom;
     z-index:0;
   }
   .hero-wrap > header, .hero-wrap > section{ position:relative; z-index:1; }
-
-  /* Phones: the text stacks into one column and the hero ends up several times taller than
-     a 1846:852 photo is wide, so the photo stops locking its ratio and stretches from the top
-     of the hero down to the divider instead, cropping its sides to fit (cover), anchored to
-     the bottom edge (the divider). While the hero is this tall the photo is scaled to its
-     full height, so only the sides are cropped and the vertical anchor has nothing to move;
-     it matters only if the box ever gets wider than the picture's ratio.
-     Above 768px (Tailwind's md) the ratio lock stays, and nothing is cropped. */
-  @media (max-width:767.98px){ .hero-photo{ aspect-ratio:auto; bottom:0; background-position:center bottom; } }
 
   .divider{display:flex; align-items:center; gap:14px; max-width:420px; margin:0 auto;}
   .divider::before,.divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);}
