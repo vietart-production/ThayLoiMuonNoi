@@ -77,12 +77,6 @@
   }
   .hero-wrap > header, .hero-wrap > section{ position:relative; z-index:1; }
 
-
-  /* Phones: the photo is a banner in the flow, at its own 1846:852 ratio (so never cropped),
-     instead of sitting behind the text. It comes after the header in the markup so the nav
-     stays on top. 768px = Tailwind's md; from there up the photo stays pinned behind. */
-  @media (max-width:767.98px){ .hero-photo{ position:relative; } }
-
   .divider{display:flex; align-items:center; gap:14px; max-width:420px; margin:0 auto;}
   .divider::before,.divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);}
   .divider svg{flex-shrink:0;}
@@ -132,6 +126,7 @@
 <audio id="bgMusic" src="assets/bg-music.mp3" loop preload="auto"></audio>
 
 <div class="hero-wrap">
+  <div class="hero-photo" aria-hidden="true"></div>
   <!-- Nav -->
   <header class="sticky top-0 z-50 border-b" style="border-color:rgba(255,255,255,.12); background:rgba(16,10,7,.4); backdrop-filter:blur(10px);">
     <nav class="max-w-6xl mx-auto px-5 py-3 md:py-0 md:h-16 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -178,7 +173,6 @@
       <a href="#an-toan" style="color:var(--ink-dim);">An toàn</a>
     </div>
   </header>
-  <div class="hero-photo" aria-hidden="true"></div>
 
   <!-- Hero -->
   <section id="top" class="relative max-w-6xl mx-auto px-5 pt-16 pb-24 md:pb-32 grid md:grid-cols-2 gap-10 items-center">
