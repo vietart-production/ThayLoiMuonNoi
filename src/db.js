@@ -122,6 +122,26 @@ async function getWallet(phone) {
   return u.walletBalance || 0;
 }
 
+// ---- Account: one per phone number, whether the person buys, speaks, or both ----
+
+// Whitelisted like profileFields: the users doc also holds walletBalance, which a request
+// must never be able to touch. The name is private — shown back to its owner, never put in
+// any view another person gets (buyerOrderView / freelancerOrderView don't carry it).
+// The phone comes from the doc id, not the doc: a wallet credit can create a users doc
+// that carries only walletBalance.
+const accountView = (phone, u) => ({ phone, name: u.name || '', createdAt: u.createdAt || null });
+
+async function getAccount(phone) {
+  return accountView(phone, await ensureUser(phone));
+}
+
+async function updateAccount(phone, input = {}) {
+  await ensureUser(phone);
+  const ref = db.collection('users').doc(phone);
+  await ref.set({ name: text(input.name, 40) }, { merge: true });
+  return accountView(phone, (await ref.get()).data());
+}
+
 // ---- Topups: payOS webhook credits by orderCode, looked up in `topups/{orderCode}` ----
 async function createTopupIntent(phone, amount, orderCode) {
   await db.collection('topups').doc(String(orderCode)).set({
@@ -640,6 +660,8 @@ module.exports = {
   verifySimulatedOtp,
   ensureUser,
   getWallet,
+  getAccount,
+  updateAccount,
   createTopupIntent,
   getTopupStatus,
   creditTopup,

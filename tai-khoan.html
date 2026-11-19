@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hồ sơ của tôi — Thay Lời Muốn Nói</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎄</text></svg>">
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/ui.css">
+<style>
+  .hint{font-size:.78rem; color:var(--ink-faint); margin-top:.35rem;}
+  .field{display:block;}
+  .field > span{display:block; font-size:.82rem; font-weight:600; margin-bottom:.35rem;}
+  .field input{width:100%;}
+  .avatar-lg{width:4rem; height:4rem; font-size:1.3rem;}
+  .section-title{font-family:var(--font-display); font-weight:700; font-size:1.2rem;}
+</style>
+</head>
+<body class="antialiased">
+<div class="content-bg">
+
+<header class="navbar sticky top-0 z-50">
+  <nav class="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
+    <a href="index.html" class="font-extrabold text-lg flex items-center gap-2 display">🎄 Thay Lời Muốn Nói</a>
+    <div id="userBox" class="flex items-center gap-2 text-xs sm:order-last"></div>
+    <div class="nav-links">
+      <a href="nguoi-noi-ho.html">Tìm người nói hộ</a>
+      <a href="dat-don.html">Đơn của tôi</a>
+      <a href="tai-khoan.html" aria-current="page">Hồ sơ của tôi</a>
+      <a href="freelancer.html">Trở thành người nói hộ</a>
+      <a href="report.html">Báo cáo cuộc gọi</a>
+    </div>
+  </nav>
+</header>
+
+<main class="max-w-3xl mx-auto px-5 py-10">
+  <h1 class="text-3xl font-bold display mb-6">Hồ sơ của tôi</h1>
+
+  <div id="auth"></div>
+
+  <div id="app" style="display:none;" class="space-y-8">
+
+    <!-- Who you are: the same for everyone, whether you hire, speak, or both -->
+    <section class="card p-5 sm:p-6">
+      <div class="flex items-center gap-4">
+        <div id="avatar" class="avatar avatar-lg" aria-hidden="true">?</div>
+        <div class="min-w-0">
+          <p id="nameOut" class="text-xl font-bold display truncate">…</p>
+          <p id="phoneOut" class="muted text-sm"></p>
+          <p id="sinceOut" class="faint text-xs mt-0.5"></p>
+        </div>
+      </div>
+      <form id="nameForm" class="mt-5 flex flex-wrap items-end gap-3" novalidate>
+        <label class="field flex-1" style="min-width:12rem;">
+          <span>Tên hiển thị</span>
+          <input id="nameIn" type="text" maxlength="40" autocomplete="name" placeholder="Bạn muốn được gọi là gì?">
+        </label>
+        <button class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold">Lưu</button>
+      </form>
+      <p class="hint">Chỉ mình bạn thấy tên này. Người nói hộ không bao giờ thấy tên hay số điện thoại của người thuê.</p>
+    </section>
+
+    <!-- As a buyer: every account has a wallet and can order -->
+    <section>
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 class="section-title">Khi bạn thuê người nói hộ</h2>
+        <a href="dat-don.html" class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Xem đơn của tôi</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><p class="stat-label">Số dư ví</p><p class="stat-value accent" id="bWallet">…</p></div>
+        <div class="stat"><p class="stat-label">Đơn đang xử lý</p><p class="stat-value" id="bActive">…</p></div>
+        <div class="stat"><p class="stat-label">Đơn đã hoàn thành</p><p class="stat-value" id="bDone">…</p></div>
+        <div class="stat"><p class="stat-label">Tổng số đơn</p><p class="stat-value" id="bTotal">…</p></div>
+      </div>
+      <p class="mt-3"><a href="dat-don.html" class="underline accent text-sm">Nạp tiền vào ví</a>
+        <span class="faint text-sm"> · </span>
+        <a href="nguoi-noi-ho.html" class="underline accent text-sm">Tìm người nói hộ</a></p>
+    </section>
+
+    <!-- As a speaker: only if they've set up a profile; otherwise an invitation -->
+    <section id="speaker"><div class="skeleton" style="min-height:7rem;"></div></section>
+  </div>
+</main>
+</div>
+
+<script type="module">
+  import { mountAuthWidget, toLocalPhone } from './assets/firebase-client.js';
+  import { api } from './assets/api-client.js';
+  import { esc, toast, guard, initials } from './assets/ui.js';
+  import { vnd, dateOnly } from './assets/catalog.js';
+
+  const $ = (id) => document.getElementById(id);
+  const ENDED = ['da_dong', 'da_hoan_tien', 'da_huy', 'kich_ban_bi_tu_choi'];
+
+  mountAuthWidget({ gate: $('auth'), onLogin: async ({ phone }) => {
+    $('app').style.display = 'block';
+    $('phoneOut').textContent = toLocalPhone(phone);
+    try {
+      // Independent reads; none of them depends on another's answer.
+      const [acct, wallet, orders, speaker] = await Promise.all([
+        api.me.get(), api.wallet.get(), api.orders.mine(), api.freelancer.me(),
+      ]);
+      showAccount(acct);
+      showBuyer(wallet.balance, orders);
+      showSpeaker(speaker);
+    } catch (e) {
+      toast(e.message, true);
+      $('speaker').innerHTML = `<div class="empty"><strong>Không tải được hồ sơ</strong>${esc(e.message)} <button type="button" class="underline" onclick="location.reload()">Thử lại</button></div>`;
+    }
+  } });
+
+  function showAccount(a) {
+    $('nameOut').textContent = a.name || 'Chưa đặt tên';
+    $('nameIn').value = a.name;
+    $('avatar').innerHTML = a.name ? esc(initials(a.name))
+      : '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>';
+    $('sinceOut').textContent = a.createdAt ? `Tham gia từ ${dateOnly(a.createdAt)}` : '';
+  }
+
+  $('nameForm').addEventListener('submit', guard(async () => {
+    showAccount(await api.me.save($('nameIn').value));
+    toast('Đã lưu tên hiển thị.');
+  }));
+
+  function showBuyer(balance, orders) {
+    $('bWallet').textContent = vnd(balance);
+    $('bActive').textContent = orders.filter((o) => !ENDED.includes(o.status)).length;
+    $('bDone').textContent = orders.filter((o) => o.status === 'da_dong').length;
+    $('bTotal').textContent = orders.length;
+  }
+
+  function showSpeaker(f) {
+    if (!f) {
+      $('speaker').innerHTML = `
+        <div class="card p-5 sm:p-6">
+          <h2 class="section-title">Bạn cũng có thể nói hộ</h2>
+          <p class="muted text-sm mt-1">Dùng chính số điện thoại này để nhận đơn: điền hồ sơ, thu một đoạn giọng mẫu ngắn là xuất hiện trong danh sách người nói hộ.</p>
+          <a href="freelancer.html" class="btn-primary rounded-full px-5 py-2.5 text-sm font-semibold inline-block mt-4">Trở thành người nói hộ</a>
+        </div>`;
+      return;
+    }
+    const rating = f.ratingCount ? `${(f.ratingSum / f.ratingCount).toFixed(1).replace('.', ',')} ★` : '—';
+    const on = f.accepting !== false && !f.blocked;
+    $('speaker').innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 class="section-title">Khi bạn nói hộ <span class="status-pill ${on ? 'ok' : ''}" style="vertical-align:middle;">${f.blocked ? 'Đang bị khoá' : on ? 'Đang nhận đơn' : 'Tạm nghỉ'}</span></h2>
+        <a href="freelancer.html" class="btn-outline rounded-full px-4 py-2 text-sm font-semibold">Mở khu vực người nói hộ</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><p class="stat-label">Có thể rút</p><p class="stat-value accent">${vnd(f.withdrawable)}</p></div>
+        <div class="stat"><p class="stat-label">Cuộc gọi đã hoàn thành</p><p class="stat-value">${f.completedCount || 0}</p></div>
+        <div class="stat"><p class="stat-label">Đánh giá</p><p class="stat-value">${rating}</p></div>
+        <div class="stat"><p class="stat-label">Giọng mẫu</p><p class="stat-value" style="font-size:1.1rem;">${f.hasVoiceDemo ? 'Đã có' : 'Chưa có — thêm để được chọn nhiều hơn'}</p></div>
+      </div>
+      <p class="mt-3"><a href="ho-so.html?id=${encodeURIComponent(f.publicId)}" class="underline accent text-sm">Xem hồ sơ công khai của tôi</a></p>`;
+  }
+</script>
+</body>
+</html>

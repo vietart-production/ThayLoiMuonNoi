@@ -128,6 +128,10 @@ router.post('/payos/webhook', async (req, res) => {
 
 router.use(requireAuth);
 
+// ---- Account (everyone: buyers and freelancers alike) ----
+router.get('/me', (req, res) => send(db.getAccount(req.phone), res));
+router.post('/me', (req, res) => send(db.updateAccount(req.phone, req.body || {}), res));
+
 // ---- Wallet ----
 router.get('/wallet', (req, res) => send(db.getWallet(req.phone).then((balance) => ({ balance })), res));
 router.post('/wallet/topup-link', async (req, res) => {

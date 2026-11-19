@@ -179,3 +179,12 @@ Lý do: danh sách người nói hộ chỉ là một lưới thẻ trong `dat-d
 - Giá đơn tính theo `chars` do client gửi → gửi `chars: 1` kèm lời nhắn 2000 chữ là trả 1.000đ. Các hệ số `duration/speed/emotion/timing` cũng không kiểm → gửi `duration: 0.0001` là gần như miễn phí. Giờ server tự đếm chữ và chỉ nhận đúng các giá trị có trong form.
 - Chấm sao không giới hạn (`stars: 1000` thổi phồng điểm). Giờ chỉ nhận số nguyên 1–5.
 - Lộ số điện thoại người nói hộ ra công khai (xem trên).
+
+## 15. Hồ sơ người dùng chung (19/11/2026)
+
+Một số điện thoại = một tài khoản, dù người đó chỉ thuê, chỉ nói hộ, hay cả hai — nên có **một trang hồ sơ chung `tai-khoan.html`** ("Hồ sơ của tôi"), mở từ icon người ở header trang chủ (chỉ hiện khi đã đăng nhập) và từ thanh nav các trang. Không nhầm với `ho-so.html?id=…` là hồ sơ *công khai* của một người nói hộ.
+
+- Gồm: tên hiển thị + số điện thoại + ngày tham gia; khối "khi bạn thuê" (số dư ví, số đơn) ai cũng có; khối "khi bạn nói hộ" chỉ hiện số liệu nếu đã lập hồ sơ người nói hộ, chưa thì là lời mời bắt đầu.
+- Trường duy nhất sửa được là **tên hiển thị** (`users/{phone}.name`, tối đa 40 ký tự, qua `GET/POST /api/me`; danh sách trường cho phép giống `profileFields`, không đụng được `walletBalance`). Số điện thoại lấy từ id tài khoản, không sửa được.
+- **Tên này riêng tư**: chỉ chủ tài khoản thấy, không có trong `buyerOrderView`/`freelancerOrderView`/`publicFreelancerView`.
+- **[CHƯA CHỐT]** Có nên cho người nói hộ thấy tên người thuê trên đơn không (để mở đầu cuộc gọi kiểu "tôi gọi thay anh Minh")? Hiện chưa — người nói hộ chỉ thấy tên người được gọi và lời nhắn, và quy tắc "không bao giờ thấy thông tin người thuê" (§5) vẫn giữ nguyên.

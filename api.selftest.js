@@ -215,6 +215,20 @@ const check = (name) => checks.push(name);
   assert.equal(await balance(B1), 100000);
   assert.equal((await ok('GET', `/wallet/topups/${link.orderCode}`, { as: B1 })).status, 'credited');
   check('wallet credited only by a successful, matching payOS webhook, once');
+
+  // 4b. Account: the name is the one thing a request can set; the money on the same doc is not.
+  const acct0 = await ok('GET', '/me', { as: B1 });
+  assert.equal(acct0.phone, B1); assert.equal(acct0.name, ''); assert.ok(!('walletBalance' in acct0));
+  const acct1 = await ok('POST', '/me', { as: B1, body: { name: '  Minh ' + 'x'.repeat(60), walletBalance: 999999, phone: '+84000' } });
+  assert.equal(acct1.name.length, 40); assert.ok(acct1.name.startsWith('Minh')); assert.equal(acct1.phone, B1);
+  assert.equal(await balance(B1), 100000);
+  await fails(401, 'GET', '/me');
+  // An account whose users doc was created by a wallet credit alone has no phone field.
+  const B2 = '+84944444444';
+  const t2 = await ok('POST', '/wallet/topup-link', { as: B2, body: { amount: 20000 } });
+  await webhook({ orderCode: t2.orderCode, amount: 20000 });
+  assert.equal((await ok('GET', '/me', { as: B2 })).phone, B2);
+  check('account name editable, trimmed and capped; balance and phone untouched');
   const long = 'a'.repeat(400);
   const spoofed = await ok('POST', '/orders', { as: B1, body: order({ script: long, chars: 1 }) });
   assert.equal(spoofed.price, 30000); // 400 chars → 20 × 1000đ, × 1.5 — the client's "chars: 1" is ignored

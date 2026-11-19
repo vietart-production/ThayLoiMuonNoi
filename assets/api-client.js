@@ -22,6 +22,10 @@ export const api = {
     get: (publicId) => call(`/freelancers/${id(publicId)}`, { auth: false }),
     voice: (publicId) => call(`/freelancers/${id(publicId)}/voice-demo`, { auth: false }),
   },
+  me: {
+    get: () => call('/me'),
+    save: (name) => call('/me', { httpMethod: 'POST', body: { name } }),
+  },
   wallet: {
     get: () => call('/wallet'),
     topupLink: (amount) => call('/wallet/topup-link', { httpMethod: 'POST', body: { amount } }),
