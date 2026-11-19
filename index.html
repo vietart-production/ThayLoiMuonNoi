@@ -79,9 +79,12 @@
 
   /* Phones: the text stacks into one column and the hero ends up several times taller than
      a 1846:852 photo is wide, so the photo stops locking its ratio and stretches from the top
-     of the hero down to the divider instead, cropping its sides to fit (cover, centred).
+     of the hero down to the divider instead, cropping its sides to fit (cover), anchored to
+     the bottom edge (the divider). While the hero is this tall the photo is scaled to its
+     full height, so only the sides are cropped and the vertical anchor has nothing to move;
+     it matters only if the box ever gets wider than the picture's ratio.
      Above 768px (Tailwind's md) the ratio lock stays, and nothing is cropped. */
-  @media (max-width:767.98px){ .hero-photo{ aspect-ratio:auto; bottom:0; } }
+  @media (max-width:767.98px){ .hero-photo{ aspect-ratio:auto; bottom:0; background-position:center bottom; } }
 
   .divider{display:flex; align-items:center; gap:14px; max-width:420px; margin:0 auto;}
   .divider::before,.divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);}
