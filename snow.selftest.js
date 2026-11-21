@@ -50,7 +50,7 @@ function run({ reduceMotion, frames }) {
 
 // 1. Normal: flakes must fall. Compare each flake's y on frame 1 vs frame 60 (~1 second).
 const a = run({ reduceMotion: false, frames: 61 });
-const flakeCount = 110;
+const flakeCount = Number(/makeFlakes\((\d+)\)/.exec(src)[1]); // whatever the page ships, so changing the density does not break this
 assert.ok(a.drawn.length >= flakeCount * 60, `expected ~60 frames of drawing, got ${a.drawn.length}`);
 const firstFrame = a.drawn.slice(0, flakeCount);
 const lastFrame = a.drawn.slice(60 * flakeCount, 61 * flakeCount);
